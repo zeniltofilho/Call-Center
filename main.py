@@ -2,6 +2,7 @@ import tkinter as tk
 from database import init_db
 from dashboard import Dashboard
 from operadores import tela_operadores
+from mensageiros import tela_mensageiros
 from producao import tela_producao
 from metas import tela_metas
 from relatorios import relatorio_pdf, relatorio_excel
@@ -12,7 +13,7 @@ class CallCenterApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("Telemarketing - Sistema Profissional")
+        self.root.title("Telemarketing")
         self.root.geometry("1200x720")
         self.root.state("zoomed")
 
@@ -33,10 +34,7 @@ class CallCenterApp:
         menu_bar.add_cascade(label="Cadastros", menu=menu_cadastros)
 
         menu_cadastros.add_command(
-            label="Contribuintes",
-            command=lambda: tela_contribuintes(self.root)
-        )
-
+            label="Contribuintes", command=lambda: tela_contribuintes(self.root))
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Recibos")
         menu_cadastros.add_command(label="Boletos")
@@ -44,7 +42,8 @@ class CallCenterApp:
         menu_cadastros.add_separator()
         menu_cadastros.add_command(
             label="Operadores", command=lambda: tela_operadores(self.root))
-        menu_cadastros.add_command(label="Mensageiros")
+        menu_cadastros.add_command(
+            label="Mensageiros", command=lambda: tela_mensageiros(self.root))
         menu_cadastros.add_command(label="Supervisores")
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Ruas")
@@ -141,13 +140,15 @@ class CallCenterApp:
             ("Recibos", lambda: tela_producao(self.root, self.atualizar_dashboard)),
             ("Bol/Deb/Car", lambda: tela_metas(self.root, self.atualizar_dashboard)),
             ("Operadores", lambda: tela_operadores(self.root)),
-            ("Mensageiros", lambda: tela_operadores(self.root)),
+            ("Mensageiros", lambda: tela_mensageiros(self.root)),
             ("Supervisores", lambda: tela_operadores(self.root)),
             ("Ruas", lambda: tela_operadores(self.root)),
             ("Setores", lambda: tela_operadores(self.root)),
             ("Usuários", lambda: tela_operadores(self.root)),
+
             # ("PDF", relatorio_pdf),
             # ("Excel", relatorio_excel),
+
             ("Sair", self.root.quit)
         ]
 
