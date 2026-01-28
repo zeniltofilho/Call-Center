@@ -7,7 +7,9 @@ from producao import tela_producao
 from metas import tela_metas
 from relatorios import relatorio_pdf, relatorio_excel
 from contribuintes import tela_contribuintes
+from recibo import tela_recibo
 
+#--------------------------------------------------
 
 class CallCenterApp:
 
@@ -36,7 +38,8 @@ class CallCenterApp:
         menu_cadastros.add_command(
             label="Contribuintes", command=lambda: tela_contribuintes(self.root))
         menu_cadastros.add_separator()
-        menu_cadastros.add_command(label="Recibos")
+        menu_cadastros.add_command(
+            label="Recibos", command=lambda: tela_recibo(self.root))
         menu_cadastros.add_command(label="Boletos")
         menu_cadastros.add_command(label="Cobrança")
         menu_cadastros.add_separator()
@@ -137,7 +140,7 @@ class CallCenterApp:
 
         botoes = [
             ("Contribuintes", lambda: tela_contribuintes(self.root)),
-            ("Recibos", lambda: tela_producao(self.root, self.atualizar_dashboard)),
+            ("Recibos", lambda: tela_recibo(self.root)),
             ("Bol/Deb/Car", lambda: tela_metas(self.root, self.atualizar_dashboard)),
             ("Operadores", lambda: tela_operadores(self.root)),
             ("Mensageiros", lambda: tela_mensageiros(self.root)),
