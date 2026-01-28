@@ -8,6 +8,8 @@ from metas import tela_metas
 from relatorios import relatorio_pdf, relatorio_excel
 from contribuintes import tela_contribuintes
 from recibo import tela_recibo
+from boletos import tela_boletos
+
 
 # --------------------------------------------------
 
@@ -39,7 +41,7 @@ class CallCenterApp:
         menu_cadastros.add_command(label="Contribuintes", command=lambda: tela_contribuintes(self.root))
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Recibos", command=lambda: tela_recibo(self.root))
-        menu_cadastros.add_command(label="Boletos" , command=lambda: tela_boleto(self.root))
+        menu_cadastros.add_command(label="Boletos" , command=lambda: tela_boletos(self.root))
         menu_cadastros.add_command(label="Cobrança")
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Operadores", command=lambda: tela_operadores(self.root))
@@ -80,12 +82,13 @@ class CallCenterApp:
         menu_opcoes.add_command(label="Troca Status Contribuinte")
         menu_opcoes.add_command(label="Controle Escelsa")
         menu_opcoes.add_command(label="Excel", command=relatorio_excel)
+        menu_opcoes.add_separator()
         menu_opcoes.add_command(label="Campanha Extra")
+        menu_opcoes.add_separator()
         menu_opcoes.add_command(label="Bancos")
         menu_opcoes.add_command(label="Cartão de Crédito")
         menu_opcoes.add_command(label="Rota")
         menu_opcoes.add_command(label="Gera Boletos para Inadimplentes")
-        menu_opcoes.add_command(label="Registra Boletos na Iugu")
 
         # -------- Tabelas --------
         menu_tabelas = tk.Menu(menu_bar, tearoff=0)
@@ -100,6 +103,7 @@ class CallCenterApp:
         menu_tabelas.add_command(label="Fluxo de Caixa")
         menu_tabelas.add_command(label="Produtos")
         menu_tabelas.add_command(label="Tipo de Pagamentos")
+        menu_tabelas.add_separator()
         menu_tabelas.add_command(label="Feriados")
 
         # -------- Utilitários --------
@@ -110,7 +114,6 @@ class CallCenterApp:
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Auditoria")
         menu_utilitarios.add_command(label="Importa Arquivo Ruas dos Correios")
-        menu_utilitarios.add_command(label="Listagem Voltar Backup - 3")
         menu_utilitarios.add_command(label="Atualiza Intervalo")
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Mudança de Usuário")
@@ -118,10 +121,14 @@ class CallCenterApp:
         menu_utilitarios.add_command(label="Caixa Postal")
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Backup")
+        menu_utilitarios.add_separator()
+        menu_utilitarios.add_command(label="Importar Backup")
+        menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Atualização do Software")
+        menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Solicitar Manutenção AnyDesk")
         menu_utilitarios.add_command(label="Solicitar Manutenção TeamViewer")
-        menu_utilitarios.add_command(label="Reconectar ao Banco de Dados")
+        menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Ticket")
         menu_utilitarios.add_command(label="Gerar Dados Estatísticos")
         menu_utilitarios.add_command(label="Sobre")
@@ -138,7 +145,7 @@ class CallCenterApp:
         botoes = [
             ("Contribuintes", lambda: tela_contribuintes(self.root)),
             ("Recibos", lambda: tela_recibo(self.root)),
-            ("Bol/Deb/Car", lambda: tela_metas(self.root, self.atualizar_dashboard)),
+            ("Bol/Deb/Car", lambda: tela_boletos(self.root)),
             ("Operadores", lambda: tela_operadores(self.root)),
             ("Mensageiros", lambda: tela_mensageiros(self.root)),
             ("Supervisores", lambda: tela_operadores(self.root)),
