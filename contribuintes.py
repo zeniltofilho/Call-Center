@@ -85,6 +85,9 @@ def tela_contribuintes(root):
             tk.Button(frame, text="Inclusão", command=self.btn_inclusao).pack(side="left", padx=4)
             tk.Button(frame, text="Alteração", command=self.btn_alteracao).pack(side="left", padx=4)
             tk.Button(frame, text="Exclusão", command=self.btn_exclusao).pack(side="left", padx=4)
+            tk.Button(frame, text="Recibo", command=self.btn_recibo).pack(side="left", padx=(50,4))
+            tk.Button(frame, text="Todos", command=self.btn_todos).pack(side="left", padx=4)
+            tk.Button(frame, text="Cartão", command=self.btn_cartao).pack(side="left", padx=4)
 
         # ---------------- ABAS ----------------
         def create_bottom_tabs(self):
@@ -132,6 +135,15 @@ def tela_contribuintes(root):
 
         def btn_exclusao(self):
             messagebox.showinfo("Exclusão", "Excluído.")
+
+        def btn_recibo(self):
+            messagebox.showinfo("Recibo", "Recibo.")
+
+        def btn_todos(self):
+            messagebox.showinfo("Todos", "Todos.")
+
+        def btn_cartao(self):
+            messagebox.showinfo("Cartão", "Cartão.")        
 
         def btn_doacoes(self):
             tela_cadastro_contribuinte(self)
