@@ -9,7 +9,8 @@ from relatorios import relatorio_pdf, relatorio_excel
 from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 
-#--------------------------------------------------
+# --------------------------------------------------
+
 
 class CallCenterApp:
 

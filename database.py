@@ -2,10 +2,16 @@ import sqlite3
 
 DB_NAME = "callcenter.db"
 
+
+def conectar():
+    return sqlite3.connect(DB_NAME)
+
+
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = conectar()
     c = conn.cursor()
 
+    # -------- operadores --------
     c.execute("""
     CREATE TABLE IF NOT EXISTS operadores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,6 +20,7 @@ def init_db():
     )
     """)
 
+    # -------- produção --------
     c.execute("""
     CREATE TABLE IF NOT EXISTS producao (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,12 +31,25 @@ def init_db():
     )
     """)
 
+    # -------- metas --------
     c.execute("""
     CREATE TABLE IF NOT EXISTS metas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         data TEXT UNIQUE,
         meta_qtd INTEGER,
         meta_valor REAL
+    )
+    """)
+
+    # -------- recibos --------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS recibos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        contrib INTEGER,
+        valor REAL,
+        vencimento TEXT,
+        nosso_num TEXT,
+        operador TEXT
     )
     """)
 
