@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from cadastroContribuinte import tela_cadastro_contribuinte
-
+from boletos import tela_boletos
 
 def tela_contribuintes(root):
 
@@ -86,6 +86,7 @@ def tela_contribuintes(root):
             tk.Button(frame, text="Alteração", command=self.btn_alteracao).pack(side="left", padx=4)
             tk.Button(frame, text="Exclusão", command=self.btn_exclusao).pack(side="left", padx=4)
             tk.Button(frame, text="Recibo", command=self.btn_recibo).pack(side="left", padx=(50,4))
+            tk.Button(frame, text="Bol/Déb", command=self.btn_boleto).pack(side="left", padx=4)
             tk.Button(frame, text="Todos", command=self.btn_todos).pack(side="left", padx=4)
             tk.Button(frame, text="Cartão", command=self.btn_cartao).pack(side="left", padx=4)
 
@@ -126,7 +127,7 @@ def tela_contribuintes(root):
             return self.tree.item(sel)["values"]
 
         def btn_inclusao(self):
-            messagebox.showinfo("Inclusão", "Cadastro novo.")
+            tela_cadastro_contribuinte(self)
 
         def btn_alteracao(self):
             cli = self.cliente_selecionado()
@@ -139,6 +140,9 @@ def tela_contribuintes(root):
         def btn_recibo(self):
             messagebox.showinfo("Recibo", "Recibo.")
 
+        def btn_boleto (self):
+            tela_boletos(self)
+
         def btn_todos(self):
             messagebox.showinfo("Todos", "Todos.")
 
@@ -146,7 +150,7 @@ def tela_contribuintes(root):
             messagebox.showinfo("Cartão", "Cartão.")        
 
         def btn_doacoes(self):
-            tela_cadastro_contribuinte(self)
+            messagebox.showinfo("Inclusão", "Cadastro novo.")
 
 
         def btn_exportar(self):

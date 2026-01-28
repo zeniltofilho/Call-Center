@@ -41,7 +41,8 @@ class CallCenterApp:
         menu_cadastros.add_separator()
         menu_cadastros.add_command(
             label="Recibos", command=lambda: tela_recibo(self.root))
-        menu_cadastros.add_command(label="Boletos")
+        menu_cadastros.add_command(
+            label="Boletos" , command=lambda: tela_boleto(self.root))
         menu_cadastros.add_command(label="Cobrança")
         menu_cadastros.add_separator()
         menu_cadastros.add_command(
