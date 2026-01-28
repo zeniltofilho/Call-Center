@@ -2,13 +2,35 @@ import sqlite3
 
 DB_NAME = "callcenter.db"
 
+_conn = None
+
 
 def conectar():
     return sqlite3.connect(DB_NAME)
 
 
 def init_db():
-    conn = conectar()
+    """
+    Inicializa o banco UMA VEZ
+    e mantém a conexão aberta para o sistema todo
+    """
+    global _conn
+
+    if _conn is None:
+        _conn = sqlite3.connect(DB_NAME)
+        criar_tabelas(_conn)
+
+    return _conn
+
+
+def get_connection():
+    """
+    Retorna a mesma conexão já inicializada no main.py
+    """
+    return _conn
+
+
+def criar_tabelas(conn):
     c = conn.cursor()
 
     # -------- operadores --------
@@ -53,5 +75,15 @@ def init_db():
     )
     """)
 
+    # -------- doações --------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS doacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        contribuinte_id INTEGER,
+        data_doacao TEXT,
+        data_ligacao TEXT,
+        valor REAL
+    )
+    """)
+
     conn.commit()
-    conn.close()

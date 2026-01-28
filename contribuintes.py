@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from cadastroContribuinte import tela_cadastro_contribuinte
 from boletos import tela_boletos
+from doacoes import tela_doacoes
 
 def tela_contribuintes(root):
 
@@ -150,8 +151,7 @@ def tela_contribuintes(root):
             messagebox.showinfo("Cartão", "Cartão.")        
 
         def btn_doacoes(self):
-            messagebox.showinfo("Inclusão", "Cadastro novo.")
-
+            tela_doacoes(self)
 
         def btn_exportar(self):
             messagebox.showinfo("Exportar", "Exportado.")
