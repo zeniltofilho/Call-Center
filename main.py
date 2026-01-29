@@ -9,7 +9,7 @@ from relatorios import relatorio_pdf, relatorio_excel
 from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 from boletos import tela_boletos
-
+from supervisor import tela_supervisor
 
 # --------------------------------------------------
 
@@ -38,15 +38,20 @@ class CallCenterApp:
         menu_cadastros = tk.Menu(menu_bar, tearoff=0)
         menu_bar.add_cascade(label="Cadastros", menu=menu_cadastros)
 
-        menu_cadastros.add_command(label="Contribuintes", command=lambda: tela_contribuintes(self.root))
+        menu_cadastros.add_command(
+            label="Contribuintes", command=lambda: tela_contribuintes(self.root))
         menu_cadastros.add_separator()
-        menu_cadastros.add_command(label="Recibos", command=lambda: tela_recibo(self.root))
-        menu_cadastros.add_command(label="Boletos" , command=lambda: tela_boletos(self.root))
+        menu_cadastros.add_command(
+            label="Recibos", command=lambda: tela_recibo(self.root))
+        menu_cadastros.add_command(
+            label="Boletos", command=lambda: tela_boletos(self.root))
         menu_cadastros.add_command(label="Cobrança")
         menu_cadastros.add_separator()
-        menu_cadastros.add_command(label="Operadores", command=lambda: tela_operadores(self.root))
-        menu_cadastros.add_command(label="Mensageiros", command=lambda: tela_mensageiros(self.root))
-        menu_cadastros.add_command(label="Supervisores")
+        menu_cadastros.add_command(
+            label="Operadores", command=lambda: tela_operadores(self.root))
+        menu_cadastros.add_command(
+            label="Mensageiros", command=lambda: tela_mensageiros(self.root))
+        menu_cadastros.add_command(label="Supervisores", command=lambda: tela_supervisor(self.root))
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Ruas")
         menu_cadastros.add_command(label="Setores")
@@ -148,7 +153,7 @@ class CallCenterApp:
             ("Bol/Deb/Car", lambda: tela_boletos(self.root)),
             ("Operadores", lambda: tela_operadores(self.root)),
             ("Mensageiros", lambda: tela_mensageiros(self.root)),
-            ("Supervisores", lambda: tela_operadores(self.root)),
+            ("Supervisores", lambda: tela_supervisor(self.root)),
             ("Ruas", lambda: tela_operadores(self.root)),
             ("Setores", lambda: tela_operadores(self.root)),
             ("Usuários", lambda: tela_operadores(self.root)),
