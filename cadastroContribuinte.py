@@ -4,7 +4,7 @@ import sqlite3
 from database import DB_NAME
 
 
-def tela_cadastro_contribuinte(root, callback_atualizar=None):
+def tela_cadastro_contribuintes(root, callback_atualizar=None):
 
     class CadastroContribuinte(tk.Toplevel):
         def __init__(self, master):

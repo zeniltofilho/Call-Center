@@ -10,9 +10,11 @@ from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 from boletos import tela_boletos
 from supervisor import tela_supervisor
+from backup import fazer_backup, importar_backup
 
 # --------------------------------------------------
 
+BG_TOOLBAR = "#444AA0"
 
 class CallCenterApp:
 
@@ -125,9 +127,9 @@ class CallCenterApp:
         menu_utilitarios.add_command(label="Troca Senha")
         menu_utilitarios.add_command(label="Caixa Postal")
         menu_utilitarios.add_separator()
-        menu_utilitarios.add_command(label="Backup")
+        menu_utilitarios.add_command(label="Backup", command=fazer_backup)
         menu_utilitarios.add_separator()
-        menu_utilitarios.add_command(label="Importar Backup")
+        menu_utilitarios.add_command(label="Importar Backup", command=importar_backup)
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Atualização do Software")
         menu_utilitarios.add_separator()
@@ -144,7 +146,7 @@ class CallCenterApp:
 
     # ================= TOOLBAR =================
     def create_toolbar(self):
-        toolbar = tk.Frame(self.root, bd=1, relief=tk.RAISED)
+        toolbar = tk.Frame(self.root, bg=BG_TOOLBAR, height=50)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         botoes = [
