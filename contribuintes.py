@@ -11,7 +11,7 @@ def tela_contribuintes(root):
     janela = tk.Toplevel(root)
     janela.title("Contribuintes")
     janela.geometry("1100x650")
-    janela.configure(bg="#dcdcdc")
+    janela.configure(bg="#ECECF1")
     janela.transient(root)
     janela.grab_set()
 
@@ -23,6 +23,11 @@ class App:
     def __init__(self, root):
         self.root = root
 
+        self.style = ttk.Style()
+        self.style.theme_use("clam")
+        self.style.configure("Treeview", rowheight=28, font=("Segoe UI", 10))
+        self.style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+
         self.create_top_bar()
         self.create_table()
         self.create_actions_bar()
@@ -30,14 +35,19 @@ class App:
 
     # ---------------- TOPO ----------------
     def create_top_bar(self):
-        frame = tk.Frame(self.root, bg="#cfcfcf", pady=5)
+        frame = tk.Frame(self.root, bg="#DADAE3", pady=6)
         frame.pack(fill="x")
 
-        tk.Button(frame, text="Cadastrar Doações", command=self.btn_doacoes).pack(side="left", padx=5)
-        tk.Button(frame, text="Exportar", command=self.btn_exportar).pack(side="left", padx=5)
-        tk.Button(frame, text="Novo", command=self.btn_novo).pack(side="left", padx=5)
+        def btn(txt, cmd):
+            return tk.Button(frame, text=txt, command=cmd, bg="#144A88",
+                             fg="white", relief="flat", font=("Segoe UI", 9, "bold"),
+                             cursor="hand2", padx=10)
 
-        tk.Label(frame, text="Pesq.:", bg="#cfcfcf").pack(side="left", padx=(20, 2))
+        btn("Cadastrar Doações", self.btn_doacoes).pack(side="left", padx=5)
+        btn("Exportar", self.btn_exportar).pack(side="left", padx=5)
+        btn("Novo", self.btn_novo).pack(side="left", padx=5)
+
+        tk.Label(frame, text="Pesquisar:", bg="#DADAE3", font=("Segoe UI", 9)).pack(side="left", padx=(20, 5))
         self.search_entry = tk.Entry(frame, width=30)
         self.search_entry.pack(side="left")
 
@@ -49,12 +59,12 @@ class App:
         self.combo_status.current(0)
         self.combo_status.pack(side="left", padx=5)
 
-        tk.Button(frame, text="Vendas").pack(side="right", padx=10)
+        btn("Vendas", lambda: None).pack(side="right", padx=10)
 
     # ---------------- TABELA ----------------
     def create_table(self):
         frame = tk.Frame(self.root)
-        frame.pack(fill="both", expand=True, padx=5, pady=5)
+        frame.pack(fill="both", expand=True, padx=8, pady=6)
 
         columns = ["codigo", "dt_status", "nome", "tipo", "status", "telefone"]
 
@@ -62,38 +72,39 @@ class App:
 
         for col in columns:
             self.tree.heading(col, text=col.upper())
-            self.tree.column(col, width=120, anchor="center")
+            self.tree.column(col, width=130, anchor="center")
 
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_cliente_select)
 
     # ---------------- AÇÕES ----------------
     def create_actions_bar(self):
-        frame = tk.Frame(self.root, bg="#e5e5e5", pady=5)
+        frame = tk.Frame(self.root, bg="#DADAE3", pady=6)
         frame.pack(fill="x")
 
-        tk.Button(frame, text="Inclusão", command=self.btn_inclusao).pack(side="left", padx=4)
-        tk.Button(frame, text="Alteração", command=self.btn_alteracao).pack(side="left", padx=4)
-        tk.Button(frame, text="Exclusão", command=self.btn_exclusao).pack(side="left", padx=4)
+        def btn(txt, cmd):
+            return tk.Button(frame, text=txt, command=cmd, bg="#144A88",
+                             fg="white", relief="flat", font=("Segoe UI", 9, "bold"),
+                             cursor="hand2", padx=8)
 
-        tk.Button(frame, text="Recibo", command=self.btn_recibo).pack(side="left", padx=(50, 4))
-        tk.Button(frame, text="Bol/Déb", command=self.btn_boleto).pack(side="left", padx=4)
-        tk.Button(frame, text="Todos", command=self.btn_todos).pack(side="left", padx=4)
-        tk.Button(frame, text="Cartão", command=self.btn_cartao).pack(side="left", padx=4)
+        btn("Inclusão", self.btn_inclusao).pack(side="left", padx=4)
+        btn("Alteração", self.btn_alteracao).pack(side="left", padx=4)
+        btn("Exclusão", self.btn_exclusao).pack(side="left", padx=4)
+
+        btn("Recibo", self.btn_recibo).pack(side="left", padx=(40, 4))
+        btn("Bol/Déb", self.btn_boleto).pack(side="left", padx=4)
+        btn("Todos", self.btn_todos).pack(side="left", padx=4)
+        btn("Cartão", self.btn_cartao).pack(side="left", padx=4)
 
     # ---------------- ABAS ----------------
     def create_bottom_tabs(self):
         notebook = ttk.Notebook(self.root)
-        notebook.pack(fill="both", expand=False, padx=5, pady=5)
+        notebook.pack(fill="both", padx=6, pady=6)
 
         tab_recibos = tk.Frame(notebook)
         notebook.add(tab_recibos, text="Recibos")
 
-        self.tree_recibos = ttk.Treeview(
-            tab_recibos,
-            columns=("data", "valor"),
-            show="headings"
-        )
+        self.tree_recibos = ttk.Treeview(tab_recibos, columns=("data", "valor"), show="headings")
         self.tree_recibos.heading("data", text="Data")
         self.tree_recibos.heading("valor", text="Valor")
         self.tree_recibos.pack(fill="both", expand=True)
@@ -120,22 +131,14 @@ class App:
 
     def btn_exclusao(self):
         sel = self.tree.selection()
-        if not sel:
-            return
-
-        if messagebox.askyesno("Excluir", "Deseja excluir este contribuinte?"):
+        if sel and messagebox.askyesno("Excluir", "Deseja excluir este contribuinte?"):
             self.tree.delete(sel[0])
             self.tree_recibos.delete(*self.tree_recibos.get_children())
 
     def btn_recibo(self):
         cli = self.cliente_selecionado()
-        if not cli:
-            return
-
-        id_contrib = cli[0]
-        nome = cli[2]
-
-        tela_recibo(self.root, id_contrib, nome)
+        if cli:
+            tela_recibo(self.root, cli[0], cli[2])
 
     def btn_boleto(self):
         cli = self.cliente_selecionado()
@@ -171,4 +174,4 @@ class App:
 
     def btn_novo(self):
         self.tree.selection_remove(self.tree.selection())
-        tela_cadastro_contribuinte(self.root)
+        tela_cadastro_contribuintes(self.root)

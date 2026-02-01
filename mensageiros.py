@@ -24,29 +24,44 @@ def criar_tabela():
     con.commit()
     con.close()
 
-# ================= CRUD =================
+# ================= LISTAGEM =================
 
-def listar(tree, filtro=""):
-    for item in tree.get_children():
-        tree.delete(item)
+def listar(tree, status_bar, filtro="", somente_ativos=False):
+    tree.delete(*tree.get_children())
 
     con = conectar()
     cur = con.cursor()
 
+    query = "SELECT * FROM mensageiros WHERE 1=1"
+    params = []
+
     if filtro:
-        cur.execute("""
-            SELECT * FROM mensageiros
-            WHERE codigo LIKE ? OR nome LIKE ?
-        """, (f"%{filtro}%", f"%{filtro}%"))
-    else:
-        cur.execute("SELECT * FROM mensageiros")
+        query += " AND (codigo LIKE ? OR nome LIKE ?)"
+        params.extend([f"%{filtro}%", f"%{filtro}%"])
+
+    if somente_ativos:
+        query += " AND status='ATIVO'"
+
+    cur.execute(query, params)
+
+    total = ativos = 0
 
     for row in cur.fetchall():
-        tree.insert("", tk.END, values=row)
+        total += 1
+        tag = "ativo" if row[4] == "ATIVO" else "inativo"
+        if tag == "ativo":
+            ativos += 1
+        tree.insert("", tk.END, values=row, tags=(tag,))
 
     con.close()
 
-def salvar(tree, dados):
+    status_bar.config(
+        text=f"Total: {total}   |   Ativos: {ativos}   |   Inativos: {total-ativos}"
+    )
+
+# ================= CRUD =================
+
+def salvar(tree, status_bar, dados):
     con = conectar()
     cur = con.cursor()
 
@@ -70,9 +85,9 @@ def salvar(tree, dados):
 
     con.commit()
     con.close()
-    listar(tree)
+    listar(tree, status_bar)
 
-def excluir(tree):
+def excluir(tree, status_bar):
     item = tree.focus()
     if not item:
         messagebox.showwarning("Aviso", "Selecione um registro para excluir.")
@@ -86,17 +101,16 @@ def excluir(tree):
         cur.execute("DELETE FROM mensageiros WHERE codigo=?", (codigo,))
         con.commit()
         con.close()
-        listar(tree)
+        listar(tree, status_bar)
 
-# ================= TELA CADASTRO =================
+# ================= CADASTRO =================
 
-def tela_cadastro(root, tree, dados=None):
+def tela_cadastro(root, tree, status_bar, dados=None):
     win = tk.Toplevel(root)
     win.title("Cadastro de Mensageiro")
     win.geometry("420x300")
     win.transient(root)
     win.grab_set()
-    win.focus_force()
 
     campos = ["Nome", "Turma", "Supervisor", "Status", "Visivel"]
     entradas = {}
@@ -111,23 +125,20 @@ def tela_cadastro(root, tree, dados=None):
 
     if dados:
         codigo = dados[0]
-        entradas["nome"].insert(0, dados[1])
-        entradas["turma"].insert(0, dados[2])
-        entradas["supervisor"].insert(0, dados[3])
-        entradas["status"].insert(0, dados[4])
-        entradas["visivel"].insert(0, dados[5])
+        for i, k in enumerate(entradas):
+            entradas[k].insert(0, dados[i+1])
 
     def salvar_click():
         if not entradas["nome"].get().strip():
             messagebox.showwarning("Validação", "Informe o nome.")
             return
 
-        salvar(tree, {
+        salvar(tree, status_bar, {
             "codigo": codigo,
             "nome": entradas["nome"].get(),
             "turma": entradas["turma"].get(),
             "supervisor": entradas["supervisor"].get(),
-            "status": entradas["status"].get(),
+            "status": entradas["status"].get().upper(),
             "visivel": entradas["visivel"].get()
         })
         win.destroy()
@@ -145,19 +156,20 @@ def tela_mensageiros(root):
     win.geometry("950x550")
     win.transient(root)
     win.grab_set()
-    win.focus_force()
 
     # ---- GRID ----
     frame_grid = tk.Frame(win)
     frame_grid.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     colunas = ("codigo", "nome", "turma", "supervisor", "status", "visivel")
-
     tree = ttk.Treeview(frame_grid, columns=colunas, show="headings")
 
     for col in colunas:
         tree.heading(col, text=col.capitalize())
         tree.column(col, width=140, anchor="center")
+
+    tree.tag_configure("ativo", background="#E8F5E9")
+    tree.tag_configure("inativo", background="#FFEBEE")
 
     scrollbar = ttk.Scrollbar(frame_grid, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
@@ -165,40 +177,42 @@ def tela_mensageiros(root):
     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+    # ---- STATUS BAR ----
+    status_bar = tk.Label(win, bg="#D6D6E5", anchor="w",
+                          font=("Segoe UI", 9, "bold"))
+    status_bar.pack(fill=tk.X, side=tk.BOTTOM)
+
     # ---- BOTÕES ----
     frame_btn = tk.Frame(win)
     frame_btn.pack(fill=tk.X, padx=10)
 
     tk.Button(frame_btn, text="Inclusão",
-              command=lambda: tela_cadastro(root, tree)).pack(side=tk.LEFT, padx=5)
+              command=lambda: tela_cadastro(root, tree, status_bar)).pack(side=tk.LEFT, padx=5)
 
-    def alterar():
-        item = tree.focus()
-        if not item:
-            messagebox.showwarning("Aviso", "Selecione um registro para alterar.")
-            return
-        tela_cadastro(root, tree, tree.item(item)["values"])
-
-    tk.Button(frame_btn, text="Alteração", command=alterar).pack(side=tk.LEFT, padx=5)
+    tk.Button(frame_btn, text="Alteração",
+              command=lambda: tela_cadastro(root, tree, status_bar, tree.item(tree.focus())["values"])
+              if tree.focus() else messagebox.showwarning("Aviso","Selecione um registro")
+              ).pack(side=tk.LEFT, padx=5)
 
     tk.Button(frame_btn, text="Exclusão",
-              command=lambda: excluir(tree)).pack(side=tk.LEFT, padx=5)
+              command=lambda: excluir(tree, status_bar)).pack(side=tk.LEFT, padx=5)
 
-    tk.Button(frame_btn, text="Saída", command=win.destroy)\
-        .pack(side=tk.RIGHT, padx=10)
+    tk.Button(frame_btn, text="Saída", command=win.destroy).pack(side=tk.RIGHT, padx=10)
 
     # ---- PESQUISA ----
     frame_pesq = tk.Frame(win)
     frame_pesq.pack(fill=tk.X, padx=10, pady=6)
 
-    tk.Label(frame_pesq, text="Pesquisa:").pack(side=tk.LEFT)
-
     pesquisa_var = tk.StringVar()
-    tk.Entry(frame_pesq, textvariable=pesquisa_var, width=30)\
-        .pack(side=tk.LEFT, padx=5)
+    somente_ativos = tk.BooleanVar()
+
+    tk.Label(frame_pesq, text="Pesquisa:").pack(side=tk.LEFT)
+    tk.Entry(frame_pesq, textvariable=pesquisa_var, width=30).pack(side=tk.LEFT, padx=5)
+
+    tk.Checkbutton(frame_pesq, text="Só Ativos", variable=somente_ativos).pack(side=tk.LEFT)
 
     tk.Button(frame_pesq, text="Pesquisar",
-              command=lambda: listar(tree, pesquisa_var.get()))\
-        .pack(side=tk.LEFT)
+              command=lambda: listar(tree, status_bar, pesquisa_var.get(), somente_ativos.get())
+              ).pack(side=tk.LEFT)
 
-    listar(tree)
+    listar(tree, status_bar)

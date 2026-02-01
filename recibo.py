@@ -15,13 +15,14 @@ def tela_recibo(root, id_contribuinte=None, nome_contribuinte="TODOS"):
 
     TelaRecibos(janela, id_contribuinte, nome_contribuinte)
 
-
 class TelaRecibos:
 
     def __init__(self, root, id_contribuinte, nome_contribuinte):
         self.root = root
         self.id_contribuinte = id_contribuinte
         self.nome_contribuinte = nome_contribuinte
+
+        self.root.configure(bg="#ECECF1")
 
         self.criar_tabela()
         self.criar_botoes()
@@ -30,67 +31,69 @@ class TelaRecibos:
 
     # ================= TABELA =================
     def criar_tabela(self):
-        frame = tk.Frame(self.root)
-        frame.pack(fill=tk.BOTH, expand=True)
+        frame = tk.Frame(self.root, bg="#ECECF1")
+        frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
-        self.colunas = [
-            "ID", "Contribuinte", "Valor",
-            "Vencimento", "Nosso Número", "Operador"
-        ]
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=26, font=("Segoe UI", 9))
+        style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
-        self.tree = ttk.Treeview(
-            frame, columns=self.colunas, show="headings"
-        )
+        self.colunas = ["ID", "Contribuinte", "Valor", "Vencimento", "Nosso Número", "Operador"]
 
-        for col in self.colunas:
+        self.tree = ttk.Treeview(frame, columns=self.colunas, show="headings")
+
+        larguras = [60, 200, 90, 110, 130, 120]
+
+        for col, w in zip(self.colunas, larguras):
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=150, anchor=tk.CENTER)
+            self.tree.column(col, width=w, anchor=tk.CENTER)
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        scrollbar = ttk.Scrollbar(
-            frame, orient=tk.VERTICAL, command=self.tree.yview
-        )
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # ================= BOTÕES =================
     def criar_botoes(self):
-        frame = tk.Frame(self.root, bg="#e6e6e6")
+        frame = tk.Frame(self.root, bg="#E0E0E8")
         frame.pack(fill=tk.X)
 
-        botoes = [
-            ("Incluir", self.incluir),
-            ("Alterar", self.alterar),
-            ("Excluir", self.excluir),
-            ("Imprimir", self.imprimir),
-            ("Abrir PDF", self.abrir_pdf),
-            ("Email", self.email),
-            ("WhatsApp", self.whatsapp)
-        ]
+        def botao(txt, cmd, cor="#2E3A59"):
+            return tk.Button(
+                frame, text=txt, width=13, command=cmd,
+                bg=cor, fg="white", relief="flat",
+                font=("Segoe UI", 9, "bold"),
+                activebackground="#3F51B5",
+                cursor="hand2"
+            )
 
-        for texto, comando in botoes:
-            tk.Button(
-                frame, text=texto, width=14, command=comando
-            ).pack(side=tk.LEFT, padx=4, pady=6)
+        botao("Incluir", self.incluir).pack(side=tk.LEFT, padx=5, pady=6)
+        botao("Alterar", self.alterar).pack(side=tk.LEFT, padx=5)
+        botao("Excluir", self.excluir, "#B71C1C").pack(side=tk.LEFT, padx=5)
+        botao("Imprimir", self.imprimir).pack(side=tk.LEFT, padx=5)
+        botao("Abrir PDF", self.abrir_pdf).pack(side=tk.LEFT, padx=5)
+        botao("Email", self.email).pack(side=tk.LEFT, padx=5)
+        botao("WhatsApp", self.whatsapp, "#1B5E20").pack(side=tk.LEFT, padx=5)
 
-    # ================= STATUS =================
+    # ================= STATUS / PESQUISA =================
     def criar_barra_status(self):
-        frame = tk.Frame(self.root)
-        frame.pack(fill=tk.X)
+        frame = tk.Frame(self.root, bg="#ECECF1")
+        frame.pack(fill=tk.X, padx=8)
 
-        tk.Label(frame, text="Pesquisa:").pack(side=tk.LEFT, padx=5)
-        self.pesquisa = tk.Entry(frame, width=40)
-        self.pesquisa.pack(side=tk.LEFT)
+        tk.Label(frame, text="Pesquisar:", bg="#ECECF1", font=("Segoe UI", 9)).pack(side=tk.LEFT)
+        self.pesquisa = tk.Entry(frame, width=35)
+        self.pesquisa.pack(side=tk.LEFT, padx=5)
 
-        tk.Button(
-            frame, text="Pesquisar", command=self.pesquisar
-        ).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Buscar", command=self.pesquisar,
+                  bg="#3949AB", fg="white", relief="flat").pack(side=tk.LEFT)
 
         self.status = tk.Label(
             self.root,
             text="Impressora: Microsoft Print to PDF",
-            anchor="w"
+            anchor="w",
+            bg="#D6D6E5",
+            font=("Segoe UI", 8)
         )
         self.status.pack(fill=tk.X, side=tk.BOTTOM)
 
@@ -100,16 +103,10 @@ class TelaRecibos:
         cur = con.cursor()
 
         if self.id_contribuinte:
-            cur.execute("""
-                SELECT id, contrib, valor, vencimento, nosso_num, operador
-                FROM recibos
-                WHERE contrib = ?
-            """, (self.id_contribuinte,))
+            cur.execute("""SELECT id, contrib, valor, vencimento, nosso_num, operador
+                           FROM recibos WHERE contrib = ?""", (self.id_contribuinte,))
         else:
-            cur.execute("""
-                SELECT id, contrib, valor, vencimento, nosso_num, operador
-                FROM recibos
-            """)
+            cur.execute("""SELECT id, contrib, valor, vencimento, nosso_num, operador FROM recibos""")
 
         registros = cur.fetchall()
         con.close()
@@ -118,6 +115,8 @@ class TelaRecibos:
 
         for r in registros:
             self.tree.insert("", "end", iid=r[0], values=r)
+
+        self.status.config(text=f"{len(registros)} recibos encontrados")
 
     # ================= UTIL =================
     def recibo_selecionado(self):
@@ -133,34 +132,19 @@ class TelaRecibos:
 
         con = conectar()
         cur = con.cursor()
-        cur.execute(
-            "SELECT telefone FROM contribuintes WHERE id = ?",
-            (self.id_contribuinte,)
-        )
+        cur.execute("SELECT telefone1 FROM contribuintes WHERE id = ?", (self.id_contribuinte,))
         dado = cur.fetchone()
         con.close()
-
         return dado[0] if dado and dado[0] else None
 
     # ================= AÇÕES =================
     def incluir(self):
-        if not self.id_contribuinte:
-            messagebox.showwarning(
-                "Atenção",
-                "Selecione um contribuinte para incluir recibo"
-            )
-            return
-
-        messagebox.showinfo(
-            "Incluir",
-            "Aqui você abrirá a tela de cadastro de recibo"
-        )
+        messagebox.showinfo("Incluir", "Abrir tela de cadastro de recibo")
 
     def alterar(self):
         id_recibo = self.recibo_selecionado()
-        if not id_recibo:
-            return
-        messagebox.showinfo("Alterar", f"Alterar recibo {id_recibo}")
+        if id_recibo:
+            messagebox.showinfo("Alterar", f"Alterar recibo {id_recibo}")
 
     def excluir(self):
         id_recibo = self.recibo_selecionado()
@@ -179,41 +163,27 @@ class TelaRecibos:
         self.carregar_dados_banco()
         messagebox.showinfo("OK", "Recibo excluído")
 
-    def imprimir(self):
-        messagebox.showinfo("Imprimir", "Enviar para impressora")
-
-    def abrir_pdf(self):
-        messagebox.showinfo("PDF", "Abrir PDF do recibo")
-
-    def email(self):
-        messagebox.showinfo("Email", "Enviar recibo por email")
+    def imprimir(self): messagebox.showinfo("Imprimir", "Enviar para impressora")
+    def abrir_pdf(self): messagebox.showinfo("PDF", "Abrir PDF do recibo")
+    def email(self): messagebox.showinfo("Email", "Enviar recibo por email")
 
     def whatsapp(self):
         telefone = self.buscar_telefone_contribuinte()
-
         if not telefone:
-            messagebox.showwarning(
-                "Atenção",
-                "Contribuinte sem telefone cadastrado"
-            )
+            messagebox.showwarning("Atenção", "Contribuinte sem telefone cadastrado")
             return
 
         id_recibo = self.recibo_selecionado()
         if not id_recibo:
             return
 
-        mensagem = (
-            f"Olá {self.nome_contribuinte},\n\n"
-            f"Segue o seu recibo:\n"
-            f"Recibo Nº: {id_recibo}\n\n"
-            f"Qualquer dúvida estamos à disposição.\n\n"
-            f"Atenciosamente."
-        )
-
+        mensagem = f"Olá {self.nome_contribuinte}, seu recibo Nº {id_recibo} está disponível."
         texto = urllib.parse.quote(mensagem)
         url = f"https://wa.me/{telefone}?text={texto}"
-
         webbrowser.open(url)
 
     def pesquisar(self):
-        self.carregar_dados_banco()
+        termo = self.pesquisa.get().lower()
+        for item in self.tree.get_children():
+            valores = " ".join(map(str, self.tree.item(item)["values"])).lower()
+            self.tree.item(item, open=(termo in valores))

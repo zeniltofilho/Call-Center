@@ -54,6 +54,9 @@ class CallCenterApp:
             self.icons["Operadores"] = load("operadores.png")
             self.icons["Mensageiros"] = load("mensageiros.png")
             self.icons["Supervisores"] = load("supervisor.png")
+            self.icons["Ruas"]= load("ruas.png")
+            self.icons["Setores"]= load ("setores.png")
+            self.icons["usuarios"]= load ("usuarios.png")
             self.icons["Sair"] = load("sair.png")
         except Exception as e:
             print("Erro ao carregar ícones:", e)
@@ -182,6 +185,9 @@ class CallCenterApp:
             ("Operadores", self.icons.get("Operadores"), lambda: tela_operadores(self.root)),
             ("Mensageiros", self.icons.get("Mensageiros"), lambda: tela_mensageiros(self.root)),
             ("Supervisores", self.icons.get("Supervisores"), lambda: tela_supervisor(self.root)),
+            ("Ruas", self.icons.get("Ruas"), lambda: tela_supervisor(self.root)),
+            ("Setores", self.icons.get("Setores"), lambda: tela_supervisor(self.root)),
+            ("Usuários", self.icons.get("Usuários"), lambda: tela_supervisor(self.root)),
             ("Sair", self.icons.get("Sair"), self.root.quit)
         ]
 
