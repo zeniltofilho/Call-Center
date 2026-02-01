@@ -1,20 +1,23 @@
 import tkinter as tk
+from pathlib import Path
+from PIL import Image, ImageTk
+
 from database import init_db
 from dashboard import Dashboard
 from operadores import tela_operadores
 from mensageiros import tela_mensageiros
-from producao import tela_producao
-from metas import tela_metas
-from relatorios import relatorio_pdf, relatorio_excel
 from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 from boletos import tela_boletos
 from supervisor import tela_supervisor
+from relatorios import relatorio_excel
 from backup import fazer_backup, importar_backup
 
-# --------------------------------------------------
+# ---------------- CORES ----------------
+BG_TOOLBAR = "#B7B7C4"
+BTN_NORMAL = "#355CAA"
+BTN_HOVER = "#9CA0EC"
 
-BG_TOOLBAR = "#444AA0"
 
 class CallCenterApp:
 
@@ -24,6 +27,9 @@ class CallCenterApp:
         self.root.geometry("1200x720")
         self.root.state("zoomed")
 
+        self.icons = {}
+        self.carregar_icones()
+
         self.create_menu()
         self.create_toolbar()
 
@@ -31,6 +37,26 @@ class CallCenterApp:
 
     def atualizar_dashboard(self):
         self.dashboard.atualizar()
+
+    # ================= ÍCONES =================
+    def carregar_icones(self):
+        base = Path(__file__).parent / "icons"
+        tamanho = (24, 24)
+
+        def load(nome):
+            img = Image.open(base / nome).resize(tamanho, Image.LANCZOS)
+            return ImageTk.PhotoImage(img)
+
+        try:
+            self.icons["Contribuintes"] = load("contribuintes.png")
+            self.icons["Recibos"] = load("recibos.png")
+            self.icons["Boletos"] = load("boletos.png")
+            self.icons["Operadores"] = load("operadores.png")
+            self.icons["Mensageiros"] = load("mensageiros.png")
+            self.icons["Supervisores"] = load("supervisor.png")
+            self.icons["Sair"] = load("sair.png")
+        except Exception as e:
+            print("Erro ao carregar ícones:", e)
 
     # ================= MENU =================
     def create_menu(self):
@@ -146,33 +172,41 @@ class CallCenterApp:
 
     # ================= TOOLBAR =================
     def create_toolbar(self):
-        toolbar = tk.Frame(self.root, bg=BG_TOOLBAR, height=50)
+        toolbar = tk.Frame(self.root, bg=BG_TOOLBAR, height=60)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         botoes = [
-            ("Contribuintes", lambda: tela_contribuintes(self.root)),
-            ("Recibos", lambda: tela_recibo(self.root)),
-            ("Bol/Deb/Car", lambda: tela_boletos(self.root)),
-            ("Operadores", lambda: tela_operadores(self.root)),
-            ("Mensageiros", lambda: tela_mensageiros(self.root)),
-            ("Supervisores", lambda: tela_supervisor(self.root)),
-            ("Ruas", lambda: tela_operadores(self.root)),
-            ("Setores", lambda: tela_operadores(self.root)),
-            ("Usuários", lambda: tela_operadores(self.root)),
-
-            # ("PDF", relatorio_pdf),
-            # ("Excel", relatorio_excel),
-
-            ("Sair", self.root.quit)
+            ("Contribuintes", self.icons.get("Contribuintes"), lambda: tela_contribuintes(self.root)),
+            ("Recibos", self.icons.get("Recibos"), lambda: tela_recibo(self.root)),
+            ("Boletos", self.icons.get("Boletos"), lambda: tela_boletos(self.root)),
+            ("Operadores", self.icons.get("Operadores"), lambda: tela_operadores(self.root)),
+            ("Mensageiros", self.icons.get("Mensageiros"), lambda: tela_mensageiros(self.root)),
+            ("Supervisores", self.icons.get("Supervisores"), lambda: tela_supervisor(self.root)),
+            ("Sair", self.icons.get("Sair"), self.root.quit)
         ]
 
-        for txt, cmd in botoes:
-            tk.Button(toolbar, text=txt, width=12, command=cmd).pack(
-                side=tk.LEFT, padx=2, pady=2
+        for txt, icon, cmd in botoes:
+            btn = tk.Button(
+                toolbar,
+                text=txt,
+                image=icon,
+                compound="top",
+                command=cmd,
+                bg=BTN_NORMAL,
+                fg="white",
+                activebackground=BTN_HOVER,
+                activeforeground="white",
+                relief="flat",
+                bd=0,
+                font=("Segoe UI", 9, "bold"),
+                cursor="hand2"
             )
+            btn.pack(side=tk.LEFT, padx=6, pady=4)
+
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=BTN_HOVER))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=BTN_NORMAL))
 
 
-# ================= MAIN =================
 if __name__ == "__main__":
     init_db()
     root = tk.Tk()
