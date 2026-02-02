@@ -14,9 +14,9 @@ from relatorios import relatorio_excel
 from backup import fazer_backup, importar_backup
 
 # ---------------- CORES ----------------
-BG_TOOLBAR = "#B7B7C4"
-BTN_NORMAL = "#355CAA"
-BTN_HOVER = "#9CA0EC"
+BG_TOOLBAR = "#92929E"
+BTN_NORMAL = "#92929E"
+BTN_HOVER = "#9B9FF8"
 
 
 class CallCenterApp:
@@ -41,7 +41,7 @@ class CallCenterApp:
     # ================= ÍCONES =================
     def carregar_icones(self):
         base = Path(__file__).parent / "icons"
-        tamanho = (24, 24)
+        tamanho = (34,34)
 
         def load(nome):
             img = Image.open(base / nome).resize(tamanho, Image.LANCZOS)
@@ -56,7 +56,7 @@ class CallCenterApp:
             self.icons["Supervisores"] = load("supervisor.png")
             self.icons["Ruas"]= load("ruas.png")
             self.icons["Setores"]= load ("setores.png")
-            self.icons["usuarios"]= load ("usuarios.png")
+            self.icons["Usuários"]= load ("usuários.png")
             self.icons["Sair"] = load("sair.png")
         except Exception as e:
             print("Erro ao carregar ícones:", e)
