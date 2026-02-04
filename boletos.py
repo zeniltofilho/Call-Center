@@ -3,17 +3,43 @@ from tkinter import ttk, messagebox
 from database import conectar
 
 
-def tela_boletos(root):
+# ================= TELA =================
+def tela_boletos(root, cli=None):
+    """
+    cli = (codigo, nome, categoria, status, telefone)
+    """
     janela = tk.Toplevel(root)
-    TelaBoletos(janela)
+
+    if cli:
+        codigo = cli[0]
+        nome = cli[1]
+    else:
+        codigo = None
+        nome = "TODOS"
+
+    TelaBoletos(janela, codigo, nome)
+
 
 class TelaBoletos:
-
-    def __init__(self, root):
+    def __init__(self, root, codigo_contribuinte=None, nome_contribuinte="TODOS"):
         self.root = root
-        self.root.title("Boletos / Débitos")
+        self.codigo_contribuinte = codigo_contribuinte
+        self.nome_contribuinte = nome_contribuinte
+
+        self.root.title(f"Boletos / Débitos - {self.nome_contribuinte}")
         self.root.geometry("1250x600")
         self.root.configure(bg="#ECECF1")
+
+        # Label do contribuinte
+        self.lbl_cliente = tk.Label(
+            self.root,
+            text=f"Contribuinte: {self.nome_contribuinte}",
+            bg="#ECECF1",
+            fg="#1A237E",
+            font=("Segoe UI", 11, "bold"),
+            anchor="w"
+        )
+        self.lbl_cliente.pack(fill=tk.X, padx=10, pady=(8, 0))
 
         self.criar_tabela()
         self.criar_botoes()
@@ -99,15 +125,30 @@ class TelaBoletos:
         con = conectar()
         cur = con.cursor()
 
-        cur.execute("""
-            SELECT
-                contrib, 1, 1, 1,
-                valor, valor, '', '',
-                vencimento, '', nosso_num,
-                '', '', operador, '',
-                id, '', '', id
-            FROM recibos
-        """)
+        # Se abriu a tela a partir de um contribuinte, filtra
+        if self.codigo_contribuinte:
+            cur.execute("""
+                SELECT
+                    contrib, 1, 1, 1,
+                    valor, valor, '', '',
+                    vencimento, '', nosso_num,
+                    '', '', operador, '',
+                    id, '', '', id
+                FROM recibos
+                WHERE contrib = ?
+                ORDER BY id DESC
+            """, (self.codigo_contribuinte,))
+        else:
+            cur.execute("""
+                SELECT
+                    contrib, 1, 1, 1,
+                    valor, valor, '', '',
+                    vencimento, '', nosso_num,
+                    '', '', operador, '',
+                    id, '', '', id
+                FROM recibos
+                ORDER BY id DESC
+            """)
 
         registros = cur.fetchall()
         con.close()
@@ -119,15 +160,34 @@ class TelaBoletos:
 
         self.status.config(text=f"{len(registros)} registros carregados")
 
+    # ================= UTIL =================
+    def registro_selecionado(self):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Atenção", "Selecione um registro")
+            return None
+        return self.tree.item(sel[0])["values"]
+
     # ================= AÇÕES =================
     def incluir(self):
+        # só permite incluir se abriu a tela por um contribuinte
+        if not self.codigo_contribuinte:
+            messagebox.showwarning("Atenção", "Abra os boletos a partir de um contribuinte.")
+            return
+
+        # Exemplo fixo (depois você troca por uma tela de cadastro)
+        valor = 52.00
+        venc = "06/01/2026"
+        nosso = "275540"
+        operador = "SISTEMA"
+
         con = conectar()
         cur = con.cursor()
 
         cur.execute("""
             INSERT INTO recibos (contrib, valor, vencimento, nosso_num, operador)
             VALUES (?, ?, ?, ?, ?)
-        """, (999, 52.00, "06/01/2026", "275540", "SISTEMA"))
+        """, (self.codigo_contribuinte, valor, venc, nosso, operador))
 
         con.commit()
         con.close()
@@ -139,29 +199,46 @@ class TelaBoletos:
         messagebox.showinfo("Alterar", "Alterar boleto")
 
     def excluir(self):
-        sel = self.tree.selection()
-        if not sel:
-            messagebox.showwarning("Atenção", "Selecione um registro")
+        valores = self.registro_selecionado()
+        if not valores:
             return
 
-        cod = self.tree.item(sel[0])['values'][15]
+        id_boleto = valores[15]  # CodBol (id)
+
+        if not messagebox.askyesno("Confirmar", "Deseja excluir este registro?"):
+            return
 
         con = conectar()
         cur = con.cursor()
-        cur.execute("DELETE FROM recibos WHERE id = ?", (cod,))
+        cur.execute("DELETE FROM recibos WHERE id = ?", (id_boleto,))
         con.commit()
         con.close()
 
         self.carregar_dados_banco()
         messagebox.showinfo("OK", "Registro excluído")
 
-    def imprimir(self): messagebox.showinfo("Imprimir", "Imprimir boleto/recibo")
-    def confirmar(self): messagebox.showinfo("Confirmar", "Confirmado")
-    def email(self): messagebox.showinfo("Email", "Enviar Email")
-    def whatsapp(self): messagebox.showinfo("WhatsApp", "Enviar WhatsApp")
+    def imprimir(self):
+        messagebox.showinfo("Imprimir", "Imprimir boleto/recibo")
+
+    def confirmar(self):
+        messagebox.showinfo("Confirmar", "Confirmado")
+
+    def email(self):
+        messagebox.showinfo("Email", "Enviar Email")
+
+    def whatsapp(self):
+        messagebox.showinfo("WhatsApp", "Enviar WhatsApp")
 
     def pesquisar(self):
-        termo = self.pesquisa.get().lower()
+        termo = self.pesquisa.get().lower().strip()
+
+        # recarrega tudo e filtra na tela
+        self.carregar_dados_banco()
+
+        if not termo:
+            return
+
         for item in self.tree.get_children():
             valores = " ".join(map(str, self.tree.item(item)["values"])).lower()
-            self.tree.item(item, open=(termo in valores))
+            if termo not in valores:
+                self.tree.delete(item)

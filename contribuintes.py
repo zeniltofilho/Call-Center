@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import csv
 import sqlite3
-
+from datetime import datetime
 from database import DB_NAME
 from cadastroContribuinte import tela_cadastro_contribuintes
 from boletos import tela_boletos
@@ -48,6 +48,8 @@ class App:
                 CREATE TABLE IF NOT EXISTS contribuintes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     codigo INTEGER UNIQUE,
+                    data TEXT,
+                    tipo TEXT,
                     nome TEXT,
                     categoria TEXT,
                     sexo TEXT,
@@ -62,7 +64,28 @@ class App:
                     cidade TEXT,
                     cpf TEXT,
                     rg TEXT,
-                    observacoes TEXT
+                    observacoes TEXT,
+                    operador_atual TEXT,
+                    operador_fixo TEXT,
+                    setor TEXT,
+                    data_vl TEXT
+                )
+            """)
+            # Garante compatibilidade com bancos antigos
+            try: cur.execute("ALTER TABLE contribuintes ADD COLUMN data TEXT")
+            except: pass
+            try: cur.execute("ALTER TABLE contribuintes ADD COLUMN tipo TEXT")
+            except: pass
+
+    def garantir_tabela_recibos(self):
+        with self.conectar() as con:
+            cur = con.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS recibos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contrib INTEGER,
+                    vencimento TEXT,
+                    valor TEXT
                 )
             """)
 
@@ -114,31 +137,40 @@ class App:
         frame = tk.Frame(self.root)
         frame.pack(fill="both", expand=True, padx=8, pady=6)
 
-        columns = ["codigo", "nome", "categoria", "status", "telefone"]
+        columns = ["Codigo", "Data", "Nome", "Tipo", "Status", "Telefone", 
+                   "Operador Atual", "Operador Fixo", "Setor", "Valor", "Rua", "Numero", "Email"]
 
         self.tree = ttk.Treeview(frame, columns=columns, show="headings")
 
         headers = {
-            "codigo": "CÓDIGO",
-            "nome": "NOME",
-            "categoria": "CATEGORIA",
-            "status": "STATUS",
-            "telefone": "TELEFONE"
+            "Codigo": "Código",
+            "Data": "Data",
+            "Nome": "Nome",
+            "Tipo": "Tipo",
+            "Status": "Status",
+            "Telefone": "Telefone",
+            "Operador Atual": "Operador Atual",
+            "Operador Fixo": "Operador Fixo",
+            "Setor": "Setor",
+            "Valor": "Último VL",
+            "Rua": "Rua",
+            "Numero": "Número",
+            "Email": "E-mail"
         }
 
-        widths = {
-            "codigo": 100,
-            "nome": 420,
-            "categoria": 140,
-            "status": 120,
-            "telefone": 180
-        }
+        widths = {col: 80 for col in columns}
+        widths["Nome"] = 150
+        widths["Rua"] = 120
+        widths["Email"] = 150
+        widths["Valor"] = 100
 
         for col in columns:
             self.tree.heading(col, text=headers[col])
             self.tree.column(col, width=widths[col], anchor="center")
 
-        self.tree.column("nome", anchor="w")
+        self.tree.column("Nome", anchor="w")
+        self.tree.column("Rua", anchor="w")
+        self.tree.column("Email", anchor="w")
 
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_cliente_select)
@@ -169,30 +201,74 @@ class App:
         notebook = ttk.Notebook(self.root)
         notebook.pack(fill="both", padx=6, pady=6)
 
-        tab_recibos = tk.Frame(notebook)
+        tab_recibos = tk.Frame(notebook, bg="#ECECF1")
         notebook.add(tab_recibos, text="Recibos")
 
-        self.tree_recibos = ttk.Treeview(tab_recibos, columns=("data", "valor"), show="headings")
+        frame_lista = tk.Frame(tab_recibos, bg="#ECECF1")
+        frame_lista.pack(fill="x", padx=10, pady=10)
+
+        self.tree_recibos = ttk.Treeview(
+            frame_lista,
+            columns=("data", "valor"),
+            show="headings",
+            height=6
+        )
+
         self.tree_recibos.heading("data", text="Data")
         self.tree_recibos.heading("valor", text="Valor")
 
-        self.tree_recibos.column("data", width=150, anchor="center")
-        self.tree_recibos.column("valor", width=150, anchor="center")
+        self.tree_recibos.column("data", width=140, anchor="center")
+        self.tree_recibos.column("valor", width=200, anchor="center")
 
-        self.tree_recibos.pack(fill="both", expand=True)
+        self.tree_recibos.pack(side="left", fill="x", expand=False)
+
+        scroll = ttk.Scrollbar(frame_lista, orient="vertical", command=self.tree_recibos.yview)
+        self.tree_recibos.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
 
     # ---------------- CARREGAR DO BANCO ----------------
     def buscar_contribuintes(self):
         self.garantir_tabela_contribuintes()
+        self.garantir_tabela_recibos()
 
         with self.conectar() as con:
             cur = con.cursor()
             cur.execute("""
-                SELECT codigo, nome, categoria, status, telefone1
-                FROM contribuintes
-                ORDER BY CAST(codigo AS INTEGER) ASC
+                SELECT 
+                    c.codigo, c.data, c.nome, c.tipo, c.status, c.telefone1,
+                    c.operador_atual, c.operador_fixo, c.setor,
+                    (SELECT valor FROM recibos r WHERE r.contrib = c.codigo ORDER BY r.vencimento DESC LIMIT 1) AS ultimo_vl,
+                    c.rua, c.numero, c.email
+                FROM contribuintes c
+                ORDER BY CAST(c.codigo AS INTEGER) ASC
             """)
-            return cur.fetchall()
+            dados = cur.fetchall()
+
+        # Formata data e valor
+        dados_formatados = []
+        for row in dados:
+            codigo, data, nome, tipo, st, tel, op_atual, op_fixo, setor, vl, rua, numero, email = row
+
+            # Formata data de YYYY-MM-DD para DD/MM/YYYY
+            if data:
+                try:
+                    data = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m/%Y")
+                except:
+                    pass
+
+            # Formata valor em R$
+            if vl:
+                try:
+                    vl_float = float(str(vl).replace(",", "."))
+                    vl = f"R$ {vl_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                except:
+                    vl = "R$ 0,00"
+            else:
+                vl = "R$ 0,00"
+
+            dados_formatados.append((codigo, data, nome, tipo, st, tel, op_atual, op_fixo, setor, vl, rua, numero, email))
+
+        return dados_formatados
 
     # ---------------- RECIBOS ----------------
     def carregar_recibos_contribuinte(self, codigo_contribuinte):
@@ -201,23 +277,23 @@ class App:
         try:
             with self.conectar() as con:
                 cur = con.cursor()
-
                 cur.execute("""
                     SELECT vencimento, valor
                     FROM recibos
                     WHERE contrib = ?
                     ORDER BY vencimento DESC
                 """, (codigo_contribuinte,))
-
                 dados = cur.fetchall()
 
             for vencimento, valor in dados:
                 try:
-                    valor = float(valor)
+                    valor_float = float(str(valor).replace(",", "."))
                 except:
-                    valor = 0
+                    valor_float = 0
 
-                self.tree_recibos.insert("", "end", values=(vencimento, f"R$ {valor:.2f}"))
+                valor_formatado = f"R$ {valor_float:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+                self.tree_recibos.insert("", "end", values=(vencimento, valor_formatado))
 
         except Exception as e:
             print("Erro ao carregar recibos:", e)
@@ -234,7 +310,7 @@ class App:
         dados = self.buscar_contribuintes()
 
         for row in dados:
-            codigo, nome, categoria, st, tel = row
+            codigo, data, nome, tipo, st, tel, op_atual, op_fixo, setor, vl, rua, numero, email = row
 
             if status != "Todos" and st != status:
                 continue
@@ -250,7 +326,9 @@ class App:
                 if texto not in alvo:
                     continue
 
-            self.tree.insert("", "end", values=(codigo, nome, categoria, st, tel))
+            self.tree.insert("", "end", values=(
+                codigo, data, nome, tipo, st, tel, op_atual, op_fixo, setor, vl, rua, numero, email
+            ))
 
     # ---------------- EVENTO ----------------
     def on_cliente_select(self, event):
@@ -268,7 +346,7 @@ class App:
     def btn_alteracao(self):
         cli = self.cliente_selecionado()
         if cli:
-            dados_para_editar = [cli[0], "", cli[1], cli[2], cli[3], cli[4]]
+            dados_para_editar = [cli[0], cli[1], cli[3], cli[2], cli[4], cli[5]]  # Código, Data, Tipo, Nome, Status, Telefone
             tela_cadastro_contribuintes(self.root, dados_para_editar, self.atualizar_tabela)
 
     def btn_exclusao(self):
@@ -277,8 +355,9 @@ class App:
             return
 
         codigo = cli[0]
+        nome = cli[2]
 
-        if messagebox.askyesno("Excluir", f"Deseja excluir o contribuinte {cli[1]} (Código {codigo})?"):
+        if messagebox.askyesno("Excluir", f"Deseja excluir o contribuinte {nome} (Código {codigo})?"):
             try:
                 with self.conectar() as con:
                     cur = con.cursor()
@@ -291,7 +370,7 @@ class App:
     def btn_recibo(self):
         cli = self.cliente_selecionado()
         if cli:
-            tela_recibo(self.root, cli[0], cli[1])
+            tela_recibo(self.root, cli[0], cli[2])
 
     def btn_boleto(self):
         cli = self.cliente_selecionado()
@@ -307,7 +386,7 @@ class App:
     def btn_cartao(self):
         cli = self.cliente_selecionado()
         if cli:
-            messagebox.showinfo("Pagamento", f"Pagamento por cartão: {cli[1]}")
+            messagebox.showinfo("Pagamento", f"Pagamento por cartão: {cli[2]}")
 
     def btn_doacoes(self):
         cli = self.cliente_selecionado()
@@ -321,7 +400,8 @@ class App:
 
         with open("contribuintes.csv", "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, delimiter=";")
-            writer.writerow(["Código", "Nome", "Categoria", "Status", "Telefone"])
+            writer.writerow(["Código", "Data", "Nome", "Tipo", "Status", "Telefone", "Operador Atual",
+                             "Operador Fixo", "Setor", "Último VL", "Rua", "Número", "Email"])
 
             for item in self.tree.get_children():
                 writer.writerow(self.tree.item(item)["values"])

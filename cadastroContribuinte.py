@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
+from datetime import datetime
 from database import DB_NAME
 
 
@@ -26,6 +27,9 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
                 self.preencher_campos()
             else:
                 self.definir_codigo_automatico()
+                self.ent_tipo.set("A")  # Tipo padrão
+                self.ent_data.delete(0, tk.END)
+                self.ent_data.insert(0, datetime.today().strftime("%Y-%m-%d"))
 
         def centralizar(self, largura, altura):
             self.update_idletasks()
@@ -43,6 +47,8 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
                     CREATE TABLE IF NOT EXISTS contribuintes (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         codigo INTEGER UNIQUE,
+                        data TEXT,
+                        tipo TEXT,
                         nome TEXT,
                         categoria TEXT,
                         sexo TEXT,
@@ -60,6 +66,11 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
                         observacoes TEXT
                     )
                 """)
+                # garante compatibilidade com bancos antigos
+                try: cur.execute("ALTER TABLE contribuintes ADD COLUMN data TEXT")
+                except: pass
+                try: cur.execute("ALTER TABLE contribuintes ADD COLUMN tipo TEXT")
+                except: pass
 
         def gerar_proximo_codigo(self):
             with self.conectar() as con:
@@ -82,24 +93,32 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
             # ================= TOPO =================
             topo = ttk.LabelFrame(self, text="Dados Principais")
-            topo.place(x=10, y=10, width=960, height=130)
+            topo.place(x=10, y=10, width=960, height=160)
 
             ttk.Label(topo, text="Código").place(x=10, y=10)
             self.ent_codigo = tk.Entry(topo, width=10, font=("Segoe UI", 9, "bold"),
                                        fg="#0B5394", justify="center", state="readonly")
             self.ent_codigo.place(x=70, y=10)
 
-            ttk.Label(topo, text="Nome").place(x=150, y=10)
+            ttk.Label(topo, text="Data").place(x=150, y=10)
+            self.ent_data = tk.Entry(topo, width=12)
+            self.ent_data.place(x=200, y=10)
+
+            ttk.Label(topo, text="Tipo").place(x=320, y=10)
+            self.ent_tipo = ttk.Combobox(topo, values=["A", "B", "C"], width=5, state="readonly")
+            self.ent_tipo.place(x=360, y=10)
+
+            ttk.Label(topo, text="Nome").place(x=420, y=10)
             self.ent_nome = tk.Entry(topo, width=45)
-            self.ent_nome.place(x=200, y=10)
+            self.ent_nome.place(x=470, y=10)
 
-            ttk.Label(topo, text="Categoria").place(x=580, y=10)
+            ttk.Label(topo, text="Categoria").place(x=580, y=50)
             self.cb_categoria = ttk.Combobox(topo, values=["A", "B", "C"], width=5, state="readonly")
-            self.cb_categoria.place(x=650, y=10)
+            self.cb_categoria.place(x=650, y=50)
 
-            ttk.Label(topo, text="Sexo").place(x=720, y=10)
+            ttk.Label(topo, text="Sexo").place(x=720, y=50)
             self.cb_sexo = ttk.Combobox(topo, values=["M", "F"], width=5, state="readonly")
-            self.cb_sexo.place(x=760, y=10)
+            self.cb_sexo.place(x=760, y=50)
 
             ttk.Label(topo, text="Status").place(x=10, y=50)
             self.ent_status = tk.Entry(topo, width=15)
@@ -115,7 +134,7 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
             # ================= CONTATOS =================
             contatos = ttk.LabelFrame(self, text="Contatos")
-            contatos.place(x=10, y=150, width=960, height=80)
+            contatos.place(x=10, y=180, width=960, height=80)
 
             ttk.Label(contatos, text="Telefone 1").place(x=10, y=10)
             self.ent_tel1 = tk.Entry(contatos, width=18)
@@ -131,7 +150,7 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
             # ================= ENDEREÇO =================
             endereco = ttk.LabelFrame(self, text="Endereço")
-            endereco.place(x=10, y=240, width=960, height=100)
+            endereco.place(x=10, y=270, width=960, height=100)
 
             ttk.Label(endereco, text="Rua").place(x=10, y=10)
             self.ent_rua = tk.Entry(endereco, width=60)
@@ -147,7 +166,7 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
             # ================= DOCUMENTOS =================
             docs = ttk.LabelFrame(self, text="Documentos")
-            docs.place(x=10, y=350, width=960, height=80)
+            docs.place(x=10, y=380, width=960, height=80)
 
             ttk.Label(docs, text="CPF").place(x=10, y=10)
             self.ent_cpf = tk.Entry(docs, width=20)
@@ -159,13 +178,13 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
             # ================= OBS =================
             obs = ttk.LabelFrame(self, text="Observações")
-            obs.place(x=10, y=440, width=960, height=90)
+            obs.place(x=10, y=470, width=960, height=90)
             self.txt_obs = tk.Text(obs, height=4, font=self.fonte)
             self.txt_obs.pack(fill="both", padx=5, pady=5)
 
             # ================= BOTÕES =================
             frame_btn = tk.Frame(self, bg="#ECECF1")
-            frame_btn.place(x=0, y=540, width=980, height=60)
+            frame_btn.place(x=0, y=570, width=980, height=60)
 
             def btn(txt, cmd, cor):
                 return tk.Button(
@@ -179,12 +198,12 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
         # ---------------- EDIÇÃO ----------------
         def preencher_campos(self):
-            # dados vem da tree:
-            # [codigo, dt_status, nome, tipo, status, telefone]
             codigo = self.dados[0]
-            nome = self.dados[2]
-            status = self.dados[4]
-            telefone = self.dados[5]
+            nome = self.dados[3]
+            status = self.dados[5]
+            telefone = self.dados[6]
+            tipo = self.dados[2]
+            data = self.dados[1]
 
             self.ent_codigo.config(state="normal")
             self.ent_codigo.delete(0, tk.END)
@@ -200,7 +219,11 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
             self.ent_tel1.delete(0, tk.END)
             self.ent_tel1.insert(0, telefone)
 
-            # Agora busca no banco os dados completos:
+            self.ent_tipo.set(tipo or "A")
+            self.ent_data.delete(0, tk.END)
+            self.ent_data.insert(0, data or datetime.today().strftime("%Y-%m-%d"))
+
+            # Busca completo no banco
             try:
                 with self.conectar() as con:
                     cur = con.cursor()
@@ -234,7 +257,7 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
                     self.txt_obs.insert("1.0", obs or "")
 
             except Exception as e:
-                messagebox.showerror("Erro", f"Erro ao carregar dados do contribuinte:\n{e}")
+                messagebox.showerror("Erro", f"Erro ao carregar dados:\n{e}")
 
         # ---------------- SALVAR ----------------
         def salvar(self):
@@ -248,6 +271,8 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
 
                     dados_sql = (
                         self.ent_codigo.get(),
+                        self.ent_data.get(),
+                        self.ent_tipo.get(),
                         self.ent_nome.get(),
                         self.cb_categoria.get(),
                         self.cb_sexo.get(),
@@ -269,40 +294,21 @@ def tela_cadastro_contribuintes(root, dados=None, callback_atualizar=None):
                         # UPDATE
                         cur.execute("""
                             UPDATE contribuintes SET
-                                nome=?, categoria=?, sexo=?, status=?, nascimento=?, inscricao=?,
-                                telefone1=?, telefone2=?, email=?, rua=?, bairro=?, cidade=?,
-                                cpf=?, rg=?, observacoes=?
+                                data=?, tipo=?, nome=?, categoria=?, sexo=?, status=?,
+                                nascimento=?, inscricao=?, telefone1=?, telefone2=?, email=?,
+                                rua=?, bairro=?, cidade=?, cpf=?, rg=?, observacoes=?
                             WHERE codigo=?
-                        """, (
-                            self.ent_nome.get(),
-                            self.cb_categoria.get(),
-                            self.cb_sexo.get(),
-                            self.ent_status.get(),
-                            self.ent_nasc.get(),
-                            self.ent_insc.get(),
-                            self.ent_tel1.get(),
-                            self.ent_tel2.get(),
-                            self.ent_email.get(),
-                            self.ent_rua.get(),
-                            self.ent_bairro.get(),
-                            self.ent_cidade.get(),
-                            self.ent_cpf.get(),
-                            self.ent_rg.get(),
-                            self.txt_obs.get("1.0", tk.END).strip(),
-                            self.ent_codigo.get()
-                        ))
-
+                        """, dados_sql[1:] + (dados_sql[0],))
                         messagebox.showinfo("Sucesso", "Contribuinte atualizado com sucesso!")
-
                     else:
                         # INSERT
                         cur.execute("""
                             INSERT INTO contribuintes
-                            (codigo, nome, categoria, sexo, status, nascimento, inscricao,
-                             telefone1, telefone2, email, rua, bairro, cidade, cpf, rg, observacoes)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            (codigo, data, tipo, nome, categoria, sexo, status,
+                             nascimento, inscricao, telefone1, telefone2, email,
+                             rua, bairro, cidade, cpf, rg, observacoes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, dados_sql)
-
                         messagebox.showinfo("Sucesso", "Contribuinte salvo com sucesso!")
 
                 if callback_atualizar:

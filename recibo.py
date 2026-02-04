@@ -3,8 +3,10 @@ from tkinter import ttk, messagebox
 from database import conectar
 import webbrowser
 import urllib.parse
+import os
+import pyautogui
+import time
 from cadastro_recibo import tela_cadastro_recibo
-
 
 # ================= TELA =================
 def tela_recibo(root, codigo_contribuinte=None, nome_contribuinte="TODOS"):
@@ -48,17 +50,13 @@ class TelaRecibos:
         style.configure("Treeview", rowheight=26, font=("Segoe UI", 9))
         style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
-        # OBS: agora bate com o SELECT
         self.colunas = ["ID", "Contribuinte", "Valor", "Vencimento", "Nosso Número", "Operador"]
-
         self.tree = ttk.Treeview(frame, columns=self.colunas, show="headings")
 
         larguras = [70, 280, 100, 120, 140, 140]
-
         for col, w in zip(self.colunas, larguras):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=w, anchor=tk.CENTER)
-
         self.tree.column("Contribuinte", anchor="w")
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -84,10 +82,7 @@ class TelaRecibos:
         botao("Incluir", self.incluir).pack(side=tk.LEFT, padx=5, pady=6)
         botao("Alterar", self.alterar).pack(side=tk.LEFT, padx=5)
         botao("Excluir", self.excluir, "#B71C1C").pack(side=tk.LEFT, padx=5)
-        botao("Imprimir", self.imprimir).pack(side=tk.LEFT, padx=5)
-        botao("Abrir PDF", self.abrir_pdf).pack(side=tk.LEFT, padx=5)
-        botao("Email", self.email).pack(side=tk.LEFT, padx=5)
-        botao("WhatsApp", self.whatsapp, "#1B5E20").pack(side=tk.LEFT, padx=5)
+        botao("WhatsApp PDF", self.whatsapp_pdf, "#1B5E20").pack(side=tk.LEFT, padx=5)
 
     # ================= STATUS / PESQUISA =================
     def criar_barra_status(self):
@@ -116,10 +111,8 @@ class TelaRecibos:
     def carregar_dados_banco(self, termo=""):
         con = conectar()
         cur = con.cursor()
-
         termo = (termo or "").strip()
 
-        # filtro por contribuinte
         if self.codigo_contribuinte:
             sql = """
                 SELECT r.id,
@@ -152,12 +145,10 @@ class TelaRecibos:
         registros = cur.fetchall()
         con.close()
 
-        # filtro por termo (pesquisa simples no nome)
         if termo:
             registros = [r for r in registros if termo.lower() in (r[1] or "").lower()]
 
         self.tree.delete(*self.tree.get_children())
-
         for r in registros:
             self.tree.insert("", "end", iid=r[0], values=r)
 
@@ -174,14 +165,11 @@ class TelaRecibos:
     def buscar_telefone_contribuinte(self):
         if not self.codigo_contribuinte:
             return None
-
         con = conectar()
         cur = con.cursor()
-
         cur.execute("SELECT telefone1 FROM contribuintes WHERE codigo = ?", (self.codigo_contribuinte,))
         dado = cur.fetchone()
         con.close()
-
         return dado[0] if dado and dado[0] else None
 
     # ================= AÇÕES =================
@@ -206,29 +194,18 @@ class TelaRecibos:
         id_recibo = self.recibo_selecionado()
         if not id_recibo:
             return
-
         if not messagebox.askyesno("Confirmar", "Deseja excluir este recibo?"):
             return
-
         con = conectar()
         cur = con.cursor()
         cur.execute("DELETE FROM recibos WHERE id = ?", (id_recibo,))
         con.commit()
         con.close()
-
         self.carregar_dados_banco()
         messagebox.showinfo("OK", "Recibo excluído")
 
-    def imprimir(self):
-        messagebox.showinfo("Imprimir", "Enviar para impressora")
-
-    def abrir_pdf(self):
-        messagebox.showinfo("PDF", "Abrir PDF do recibo")
-
-    def email(self):
-        messagebox.showinfo("Email", "Enviar recibo por email")
-
-    def whatsapp(self):
+    # ================= WHATSAPP PDF =================
+    def whatsapp_pdf(self):
         telefone = self.buscar_telefone_contribuinte()
         if not telefone:
             messagebox.showwarning("Atenção", "Contribuinte sem telefone cadastrado")
@@ -238,14 +215,33 @@ class TelaRecibos:
         if not id_recibo:
             return
 
+        # Caminho do PDF (exemplo, ajuste conforme seu diretório)
+        caminho_pdf = f"C:/recibos/recibo_{id_recibo}.pdf"
+        if not os.path.exists(caminho_pdf):
+            messagebox.showwarning("PDF", "Arquivo PDF do recibo não encontrado.")
+            return
+
+        # Abre WhatsApp Web
         tel = "".join([c for c in telefone if c.isdigit()])
         if not tel.startswith("55"):
             tel = "55" + tel
-
-        mensagem = f"Olá {self.nome_contribuinte}, seu recibo Nº {id_recibo} está disponível."
-        texto = urllib.parse.quote(mensagem)
-        url = f"https://wa.me/{tel}?text={texto}"
+        url = f"https://web.whatsapp.com/send?phone={tel}"
         webbrowser.open(url)
+
+        messagebox.showinfo("WhatsApp", "WhatsApp Web será aberto. Aguarde 10 segundos para carregar...")
+
+        # Aguarda o WhatsApp Web carregar
+        time.sleep(10)
+
+        # Simula CTRL+V para anexar PDF via pyautogui
+        pyautogui.hotkey('ctrl', 'o')  # abrir anexar arquivo
+        time.sleep(2)
+        pyautogui.write(caminho_pdf)
+        time.sleep(1)
+        pyautogui.press('enter')
+        time.sleep(2)
+        pyautogui.press('enter')  # envia o arquivo
+        messagebox.showinfo("WhatsApp", "Recibo enviado via WhatsApp!")
 
     def pesquisar(self):
         termo = self.pesquisa.get().strip()
