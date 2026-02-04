@@ -2,7 +2,6 @@ import tkinter as tk
 from pathlib import Path
 from PIL import Image, ImageTk
 
-from database import init_db
 from dashboard import Dashboard
 from operadores import tela_operadores
 from mensageiros import tela_mensageiros
@@ -13,10 +12,13 @@ from supervisor import tela_supervisor
 from relatorios import relatorio_excel
 from backup import fazer_backup, importar_backup
 
+from database import init_db
+init_db()
+
 # ---------------- CORES ----------------
 BG_TOOLBAR = "#92929E"
 BTN_NORMAL = "#92929E"
-BTN_HOVER = "#9B9FF8"
+BTN_HOVER = "#70709B"
 
 
 class CallCenterApp:

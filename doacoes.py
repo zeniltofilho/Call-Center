@@ -1,18 +1,20 @@
 import tkinter as tk
 from tkinter import ttk
-from database import get_connection
+from database import conectar
 
 
-def tela_doacoes(root):
+def tela_doacoes(root, cli):
     janela = tk.Toplevel(root)
-    TelaDoacoes(janela)
+    TelaDoacoes(janela, cli)
 
 
 class TelaDoacoes:
 
-    def __init__(self, root):
+    def __init__(self, root, cli):
         self.root = root
-        self.conn = get_connection()
+        self.cli = cli  # <- guarda contribuinte selecionado
+
+        self.conn = conectar()
         self.cursor = self.conn.cursor()
 
         self.root.title("Doações")
@@ -28,7 +30,22 @@ class TelaDoacoes:
         self.criar_botoes()
         self.criar_status_bar()
 
+        # preencher campos com dados do contribuinte
+        self.preencher_dados_contribuinte()
+
+        # carregar doações desse contribuinte
         self.carregar_doacoes()
+
+        # ao fechar no X
+        self.root.protocol("WM_DELETE_WINDOW", self.fechar)
+
+    # ================= FECHAR =================
+    def fechar(self):
+        try:
+            self.conn.close()
+        except:
+            pass
+        self.root.destroy()
 
     # ================= ESTILO =================
     def criar_estilo(self):
@@ -42,6 +59,53 @@ class TelaDoacoes:
                         font=("Segoe UI", 9))
         style.configure("Treeview.Heading",
                         font=("Segoe UI", 9, "bold"))
+
+    # ================= PREENCHER CONTRIBUINTE =================
+    def preencher_dados_contribuinte(self):
+        """
+        Aqui vamos tentar preencher automaticamente.
+        O 'cli' pode vir em formatos diferentes.
+        Então fazemos um tratamento seguro.
+        """
+
+        # Caso cli seja um dicionário
+        if isinstance(self.cli, dict):
+            nome = self.cli.get("nome", "")
+            tipo = self.cli.get("tipo", "")
+            contato = self.cli.get("contato", "")
+            endereco = self.cli.get("endereco", "")
+            contribuinte_id = self.cli.get("id", None)
+
+        # Caso cli seja tupla/lista
+        else:
+            # Padrão mais comum:
+            # cli = (id, nome, tipo, contato, endereco)
+            contribuinte_id = self.cli[0] if len(self.cli) > 0 else None
+            nome = self.cli[1] if len(self.cli) > 1 else ""
+            tipo = self.cli[2] if len(self.cli) > 2 else ""
+            contato = self.cli[3] if len(self.cli) > 3 else ""
+            endereco = self.cli[4] if len(self.cli) > 4 else ""
+
+        self.contribuinte_id = contribuinte_id
+
+        # Preenche os campos
+        self.ent_nome.delete(0, tk.END)
+        self.ent_nome.insert(0, nome)
+
+        self.ent_tipo.delete(0, tk.END)
+        self.ent_tipo.insert(0, tipo)
+
+        self.ent_contato.delete(0, tk.END)
+        self.ent_contato.insert(0, contato)
+
+        self.ent_endereco.delete(0, tk.END)
+        self.ent_endereco.insert(0, endereco)
+
+        # travar edição (opcional)
+        self.ent_nome.config(state="disabled")
+        self.ent_tipo.config(state="disabled")
+        self.ent_contato.config(state="disabled")
+        self.ent_endereco.config(state="disabled")
 
     # ================= CAMPOS SUPERIORES =================
     def criar_campos_superiores(self):
@@ -105,12 +169,17 @@ class TelaDoacoes:
         self.tree.delete(*self.tree.get_children())
         total = 0
 
+        if not self.contribuinte_id:
+            self.lbl_total.config(text="Total Doações: R$ 0.00")
+            return
+
         try:
             self.cursor.execute("""
                 SELECT data_doacao, data_ligacao, valor
                 FROM doacoes
+                WHERE contribuinte_id = ?
                 ORDER BY data_doacao DESC
-            """)
+            """, (self.contribuinte_id,))
 
             for data_doacao, data_ligacao, valor in self.cursor.fetchall():
                 total += float(valor)
@@ -146,9 +215,10 @@ class TelaDoacoes:
 
         tk.Button(frame, text="Alteração", width=12).pack(side=tk.LEFT, padx=10)
         tk.Button(frame, text="OK", width=12).pack(side=tk.RIGHT, padx=10)
+
         tk.Button(frame, text="Cancelar Transação",
                   width=18, fg="red",
-                  command=self.root.destroy).pack(side=tk.RIGHT, padx=10)
+                  command=self.fechar).pack(side=tk.RIGHT, padx=10)
 
     # ================= STATUS BAR =================
     def criar_status_bar(self):

@@ -3,26 +3,36 @@ from tkinter import ttk, messagebox
 from database import conectar
 import webbrowser
 import urllib.parse
+from cadastro_recibo import tela_cadastro_recibo
 
 
 # ================= TELA =================
-def tela_recibo(root, id_contribuinte=None, nome_contribuinte="TODOS"):
+def tela_recibo(root, codigo_contribuinte=None, nome_contribuinte="TODOS"):
     janela = tk.Toplevel(root)
     janela.title(f"Recibos - {nome_contribuinte}")
     janela.geometry("1250x600")
+    janela.configure(bg="#ECECF1")
     janela.transient(root)
     janela.grab_set()
 
-    TelaRecibos(janela, id_contribuinte, nome_contribuinte)
+    TelaRecibos(janela, codigo_contribuinte, nome_contribuinte)
+
 
 class TelaRecibos:
-
-    def __init__(self, root, id_contribuinte, nome_contribuinte):
+    def __init__(self, root, codigo_contribuinte, nome_contribuinte):
         self.root = root
-        self.id_contribuinte = id_contribuinte
+        self.codigo_contribuinte = codigo_contribuinte
         self.nome_contribuinte = nome_contribuinte
 
-        self.root.configure(bg="#ECECF1")
+        self.lbl_cliente = tk.Label(
+            self.root,
+            text=f"Contribuinte: {self.nome_contribuinte}",
+            bg="#ECECF1",
+            fg="#1A237E",
+            font=("Segoe UI", 11, "bold"),
+            anchor="w"
+        )
+        self.lbl_cliente.pack(fill=tk.X, padx=10, pady=(8, 0))
 
         self.criar_tabela()
         self.criar_botoes()
@@ -38,15 +48,18 @@ class TelaRecibos:
         style.configure("Treeview", rowheight=26, font=("Segoe UI", 9))
         style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
+        # OBS: agora bate com o SELECT
         self.colunas = ["ID", "Contribuinte", "Valor", "Vencimento", "Nosso Número", "Operador"]
 
         self.tree = ttk.Treeview(frame, columns=self.colunas, show="headings")
 
-        larguras = [60, 200, 90, 110, 130, 120]
+        larguras = [70, 280, 100, 120, 140, 140]
 
         for col, w in zip(self.colunas, larguras):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=w, anchor=tk.CENTER)
+
+        self.tree.column("Contribuinte", anchor="w")
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -85,12 +98,14 @@ class TelaRecibos:
         self.pesquisa = tk.Entry(frame, width=35)
         self.pesquisa.pack(side=tk.LEFT, padx=5)
 
-        tk.Button(frame, text="Buscar", command=self.pesquisar,
-                  bg="#3949AB", fg="white", relief="flat").pack(side=tk.LEFT)
+        tk.Button(
+            frame, text="Buscar", command=self.pesquisar,
+            bg="#3949AB", fg="white", relief="flat"
+        ).pack(side=tk.LEFT)
 
         self.status = tk.Label(
             self.root,
-            text="Impressora: Microsoft Print to PDF",
+            text="",
             anchor="w",
             bg="#D6D6E5",
             font=("Segoe UI", 8)
@@ -98,18 +113,48 @@ class TelaRecibos:
         self.status.pack(fill=tk.X, side=tk.BOTTOM)
 
     # ================= BANCO =================
-    def carregar_dados_banco(self):
+    def carregar_dados_banco(self, termo=""):
         con = conectar()
         cur = con.cursor()
 
-        if self.id_contribuinte:
-            cur.execute("""SELECT id, contrib, valor, vencimento, nosso_num, operador
-                           FROM recibos WHERE contrib = ?""", (self.id_contribuinte,))
-        else:
-            cur.execute("""SELECT id, contrib, valor, vencimento, nosso_num, operador FROM recibos""")
+        termo = (termo or "").strip()
 
+        # filtro por contribuinte
+        if self.codigo_contribuinte:
+            sql = """
+                SELECT r.id,
+                       c.nome,
+                       r.valor,
+                       r.vencimento,
+                       r.nosso_num,
+                       r.operador
+                FROM recibos r
+                JOIN contribuintes c ON c.codigo = r.contrib
+                WHERE r.contrib = ?
+                ORDER BY r.id DESC
+            """
+            params = (self.codigo_contribuinte,)
+        else:
+            sql = """
+                SELECT r.id,
+                       c.nome,
+                       r.valor,
+                       r.vencimento,
+                       r.nosso_num,
+                       r.operador
+                FROM recibos r
+                JOIN contribuintes c ON c.codigo = r.contrib
+                ORDER BY r.id DESC
+            """
+            params = ()
+
+        cur.execute(sql, params)
         registros = cur.fetchall()
         con.close()
+
+        # filtro por termo (pesquisa simples no nome)
+        if termo:
+            registros = [r for r in registros if termo.lower() in (r[1] or "").lower()]
 
         self.tree.delete(*self.tree.get_children())
 
@@ -127,19 +172,30 @@ class TelaRecibos:
         return sel[0]
 
     def buscar_telefone_contribuinte(self):
-        if not self.id_contribuinte:
+        if not self.codigo_contribuinte:
             return None
 
         con = conectar()
         cur = con.cursor()
-        cur.execute("SELECT telefone1 FROM contribuintes WHERE id = ?", (self.id_contribuinte,))
+
+        cur.execute("SELECT telefone1 FROM contribuintes WHERE codigo = ?", (self.codigo_contribuinte,))
         dado = cur.fetchone()
         con.close()
+
         return dado[0] if dado and dado[0] else None
 
     # ================= AÇÕES =================
     def incluir(self):
-        messagebox.showinfo("Incluir", "Abrir tela de cadastro de recibo")
+        if not self.codigo_contribuinte:
+            messagebox.showwarning("Atenção", "Abra os recibos a partir de um contribuinte.")
+            return
+
+        tela_cadastro_recibo(
+            self.root,
+            self.codigo_contribuinte,
+            self.nome_contribuinte,
+            self.carregar_dados_banco
+        )
 
     def alterar(self):
         id_recibo = self.recibo_selecionado()
@@ -163,9 +219,14 @@ class TelaRecibos:
         self.carregar_dados_banco()
         messagebox.showinfo("OK", "Recibo excluído")
 
-    def imprimir(self): messagebox.showinfo("Imprimir", "Enviar para impressora")
-    def abrir_pdf(self): messagebox.showinfo("PDF", "Abrir PDF do recibo")
-    def email(self): messagebox.showinfo("Email", "Enviar recibo por email")
+    def imprimir(self):
+        messagebox.showinfo("Imprimir", "Enviar para impressora")
+
+    def abrir_pdf(self):
+        messagebox.showinfo("PDF", "Abrir PDF do recibo")
+
+    def email(self):
+        messagebox.showinfo("Email", "Enviar recibo por email")
 
     def whatsapp(self):
         telefone = self.buscar_telefone_contribuinte()
@@ -177,13 +238,15 @@ class TelaRecibos:
         if not id_recibo:
             return
 
+        tel = "".join([c for c in telefone if c.isdigit()])
+        if not tel.startswith("55"):
+            tel = "55" + tel
+
         mensagem = f"Olá {self.nome_contribuinte}, seu recibo Nº {id_recibo} está disponível."
         texto = urllib.parse.quote(mensagem)
-        url = f"https://wa.me/{telefone}?text={texto}"
+        url = f"https://wa.me/{tel}?text={texto}"
         webbrowser.open(url)
 
     def pesquisar(self):
-        termo = self.pesquisa.get().lower()
-        for item in self.tree.get_children():
-            valores = " ".join(map(str, self.tree.item(item)["values"])).lower()
-            self.tree.item(item, open=(termo in valores))
+        termo = self.pesquisa.get().strip()
+        self.carregar_dados_banco(termo=termo)
