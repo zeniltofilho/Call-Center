@@ -9,6 +9,7 @@ from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 from boletos import tela_boletos
 from supervisor import tela_supervisor
+from visualizarRecibo import visualizar_recibo
 from relatorios import relatorio_excel
 from backup import fazer_backup, importar_backup
 
@@ -133,6 +134,8 @@ class CallCenterApp:
         menu_bar.add_cascade(label="Tabelas", menu=menu_tabelas)
         menu_tabelas.add_command(label="Status")
         menu_tabelas.add_command(label="Parâmetros")
+        menu_tabelas.add_separator()
+        menu_tabelas.add_command(label="Ajuste Recibo", command=lambda: visualizar_recibo(self.root))
         menu_tabelas.add_separator()
         menu_tabelas.add_command(label="Grupo de Usuários")
         menu_tabelas.add_command(label="Níveis de Acesso")
