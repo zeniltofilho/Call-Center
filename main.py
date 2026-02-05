@@ -1,7 +1,8 @@
 import tkinter as tk
 from pathlib import Path
 from PIL import Image, ImageTk
-
+from produ import tela_producao
+from ranking import tela_ranking
 from dashboard import Dashboard
 from operadores import tela_operadores
 from mensageiros import tela_mensageiros
@@ -44,7 +45,7 @@ class CallCenterApp:
     # ================= ÍCONES =================
     def carregar_icones(self):
         base = Path(__file__).parent / "icons"
-        tamanho = (34,34)
+        tamanho = (34, 34)
 
         def load(nome):
             img = Image.open(base / nome).resize(tamanho, Image.LANCZOS)
@@ -57,9 +58,11 @@ class CallCenterApp:
             self.icons["Operadores"] = load("operadores.png")
             self.icons["Mensageiros"] = load("mensageiros.png")
             self.icons["Supervisores"] = load("supervisor.png")
-            self.icons["Ruas"]= load("ruas.png")
-            self.icons["Setores"]= load ("setores.png")
-            self.icons["Usuários"]= load ("usuários.png")
+            self.icons["Ruas"] = load("ruas.png")
+            self.icons["Setores"] = load("setores.png")
+            self.icons["Produção"] = load("produção.png")
+            self.icons["Ranking"] = load("ranking.png")
+            self.icons["Usuários"] = load("usuários.png")
             self.icons["Sair"] = load("sair.png")
         except Exception as e:
             print("Erro ao carregar ícones:", e)
@@ -85,7 +88,8 @@ class CallCenterApp:
             label="Operadores", command=lambda: tela_operadores(self.root))
         menu_cadastros.add_command(
             label="Mensageiros", command=lambda: tela_mensageiros(self.root))
-        menu_cadastros.add_command(label="Supervisores", command=lambda: tela_supervisor(self.root))
+        menu_cadastros.add_command(
+            label="Supervisores", command=lambda: tela_supervisor(self.root))
         menu_cadastros.add_separator()
         menu_cadastros.add_command(label="Ruas")
         menu_cadastros.add_command(label="Setores")
@@ -135,7 +139,8 @@ class CallCenterApp:
         menu_tabelas.add_command(label="Status")
         menu_tabelas.add_command(label="Parâmetros")
         menu_tabelas.add_separator()
-        menu_tabelas.add_command(label="Ajuste Recibo", command=lambda: visualizar_recibo(self.root))
+        menu_tabelas.add_command(
+            label="Ajuste Recibo", command=lambda: visualizar_recibo(self.root))
         menu_tabelas.add_separator()
         menu_tabelas.add_command(label="Grupo de Usuários")
         menu_tabelas.add_command(label="Níveis de Acesso")
@@ -163,7 +168,8 @@ class CallCenterApp:
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Backup", command=fazer_backup)
         menu_utilitarios.add_separator()
-        menu_utilitarios.add_command(label="Importar Backup", command=importar_backup)
+        menu_utilitarios.add_command(
+            label="Importar Backup", command=importar_backup)
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Atualização do Software")
         menu_utilitarios.add_separator()
@@ -184,15 +190,23 @@ class CallCenterApp:
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         botoes = [
-            ("Contribuintes", self.icons.get("Contribuintes"), lambda: tela_contribuintes(self.root)),
+            ("Contribuintes", self.icons.get("Contribuintes"),
+             lambda: tela_contribuintes(self.root)),
             ("Recibos", self.icons.get("Recibos"), lambda: tela_recibo(self.root)),
             ("Boletos", self.icons.get("Boletos"), lambda: tela_boletos(self.root)),
-            ("Operadores", self.icons.get("Operadores"), lambda: tela_operadores(self.root)),
-            ("Mensageiros", self.icons.get("Mensageiros"), lambda: tela_mensageiros(self.root)),
-            ("Supervisores", self.icons.get("Supervisores"), lambda: tela_supervisor(self.root)),
+            ("Operadores", self.icons.get("Operadores"),
+             lambda: tela_operadores(self.root)),
+            ("Mensageiros", self.icons.get("Mensageiros"),
+             lambda: tela_mensageiros(self.root)),
+            ("Supervisores", self.icons.get("Supervisores"),
+             lambda: tela_supervisor(self.root)),
             ("Ruas", self.icons.get("Ruas"), lambda: tela_supervisor(self.root)),
-            ("Setores", self.icons.get("Setores"), lambda: tela_supervisor(self.root)),
-            ("Usuários", self.icons.get("Usuários"), lambda: tela_supervisor(self.root)),
+            ("Setores", self.icons.get("Setores"),
+             lambda: tela_supervisor(self.root)),
+             ("Produção", self.icons.get("Produção"), lambda: tela_producao(self.root)),
+            ("Ranking", self.icons.get("Ranking"), lambda: tela_ranking(self.root)),
+            ("Usuários", self.icons.get("Usuários"),
+             lambda: tela_supervisor(self.root)),
             ("Sair", self.icons.get("Sair"), self.root.quit)
         ]
 

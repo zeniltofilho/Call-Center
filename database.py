@@ -30,6 +30,40 @@ def criar_tabelas(conn):
     )
     """)
 
+    # -------- atualizar tabela operadores (se faltar colunas) --------
+    c.execute("PRAGMA table_info(operadores)")
+    cols = [x[1] for x in c.fetchall()]
+
+    if "turno" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN turno TEXT")
+
+    if "turma" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN turma TEXT")
+
+    if "supervisor" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN supervisor TEXT")
+
+    if "sts" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN sts TEXT")
+
+    if "oper" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN oper REAL")
+
+    if "premio" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN premio REAL")
+
+    if "comissao" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN comissao REAL")
+
+    if "rep" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN rep TEXT")
+
+    if "mvf" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN mvf TEXT")
+
+    if "mvd" not in cols:
+        c.execute("ALTER TABLE operadores ADD COLUMN mvd TEXT")
+
     # =========================================================
     # 2) TABELA PRODUCAO
     # =========================================================
