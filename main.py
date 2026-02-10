@@ -1,71 +1,83 @@
 import tkinter as tk
+from tkinter import ttk, messagebox
 from pathlib import Path
-from PIL import Image, ImageTk
+
+# Pillow (seguro)
+try:
+    from PIL import Image, ImageTk
+except:
+    Image = None
+    ImageTk = None
+
+# Telas
 from produ import tela_producao
 from ranking import tela_ranking
-from dashboard import Dashboard
 from operadores import tela_operadores
 from mensageiros import tela_mensageiros
 from contribuintes import tela_contribuintes
 from recibo import tela_recibo
 from boletos import tela_boletos
 from supervisor import tela_supervisor
-from visualizarRecibo import visualizar_recibo
-from relatorios import relatorio_excel
-from backup import fazer_backup, importar_backup
 
 from database import init_db
 init_db()
 
-# ---------------- CORES ----------------
-BG_TOOLBAR = "#92929E"
-BTN_NORMAL = "#92929E"
-BTN_HOVER = "#70709B"
+# ================= FUNÇÕES AUXILIARES =================
+def relatorio_excel():
+    messagebox.showinfo("Excel", "Relatório Excel em desenvolvimento")
+
+def visualizar_recibo(root):
+    messagebox.showinfo("Recibo", "Visualização de recibo em desenvolvimento")
+
+def fazer_backup():
+    messagebox.showinfo("Backup", "Backup realizado (simulação)")
+
+def importar_backup():
+    messagebox.showinfo("Backup", "Importação de backup em desenvolvimento")
+
+# ================= CORES =================
+BG_APP = "#F4F6F8"
+HEADER = "#2B055C"
+TOOLBAR_BG = "#503692"
+TOOLBAR_HOVER = "#603AC0"
+SUBMENU = "#E9E9EE"
+CARD_BG = "#FFFFFF"
+TEXT = "#2E2E2E"
+AZUL = "#2F80ED"
+VERDE = "#27AE60"
+VERMELHO = "#EB5757"
 
 
 class CallCenterApp:
 
+    # ================= HEADER =================
+    def create_header(self):
+        header = tk.Frame(self.root, bg=HEADER, height=50)
+        header.pack(fill=tk.X)
+
+        tk.Label(
+            header,
+            text="",
+            bg=HEADER,
+            fg="white",
+            font=("Segoe UI", 1, "bold")
+        ).pack(side=tk.LEFT, padx=20)
+
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Telemarketing")
-        self.root.geometry("1200x720")
+        self.root.title("Call Center Dashboard")
         self.root.state("zoomed")
+        self.root.configure(bg=BG_APP)
 
         self.icons = {}
         self.carregar_icones()
 
-        self.create_menu()
+        self.create_header()
+        self.create_menu()      # corrigido
         self.create_toolbar()
-
-        self.dashboard = Dashboard(self.root)
-
-    def atualizar_dashboard(self):
-        self.dashboard.atualizar()
-
-    # ================= ÍCONES =================
-    def carregar_icones(self):
-        base = Path(__file__).parent / "icons"
-        tamanho = (34, 34)
-
-        def load(nome):
-            img = Image.open(base / nome).resize(tamanho, Image.LANCZOS)
-            return ImageTk.PhotoImage(img)
-
-        try:
-            self.icons["Contribuintes"] = load("contribuintes.png")
-            self.icons["Recibos"] = load("recibos.png")
-            self.icons["Boletos"] = load("boletos.png")
-            self.icons["Operadores"] = load("operadores.png")
-            self.icons["Mensageiros"] = load("mensageiros.png")
-            self.icons["Supervisores"] = load("supervisor.png")
-            self.icons["Ruas"] = load("ruas.png")
-            self.icons["Setores"] = load("setores.png")
-            self.icons["Produção"] = load("produção.png")
-            self.icons["Ranking"] = load("ranking.png")
-            self.icons["Usuários"] = load("usuários.png")
-            self.icons["Sair"] = load("sair.png")
-        except Exception as e:
-            print("Erro ao carregar ícones:", e)
+        self.create_submenu()   # agora existe
+        self.create_dashboard()
 
     # ================= MENU =================
     def create_menu(self):
@@ -182,58 +194,120 @@ class CallCenterApp:
         menu_utilitarios.add_separator()
         menu_utilitarios.add_command(label="Fechar", command=self.root.destroy)
 
-        self.root.config(menu=menu_bar)
+        self.root.config(menu=menu_bar)    
+
+    # ================= SUBMENU =================
+    def create_submenu(self):
+        frame = tk.Frame(self.root, bg=SUBMENU, height=30)
+        frame.pack(fill=tk.X)
+
+        tk.Label(
+            frame,
+            text="Sistema de Gestão - Call Center",
+            bg=SUBMENU,
+            fg=TEXT,
+            font=("Segoe UI", 9)
+        ).pack(side=tk.LEFT, padx=15)
 
     # ================= TOOLBAR =================
     def create_toolbar(self):
-        toolbar = tk.Frame(self.root, bg=BG_TOOLBAR, height=60)
-        toolbar.pack(side=tk.TOP, fill=tk.X)
+        toolbar = tk.Frame(self.root, bg=TOOLBAR_BG, height=70)
+        toolbar.pack(fill=tk.X)
 
         botoes = [
-            ("Contribuintes", self.icons.get("Contribuintes"),
-             lambda: tela_contribuintes(self.root)),
-            ("Recibos", self.icons.get("Recibos"), lambda: tela_recibo(self.root)),
-            ("Boletos", self.icons.get("Boletos"), lambda: tela_boletos(self.root)),
-            ("Operadores", self.icons.get("Operadores"),
-             lambda: tela_operadores(self.root)),
-            ("Mensageiros", self.icons.get("Mensageiros"),
-             lambda: tela_mensageiros(self.root)),
-            ("Supervisores", self.icons.get("Supervisores"),
-             lambda: tela_supervisor(self.root)),
-            ("Ruas", self.icons.get("Ruas"), lambda: tela_supervisor(self.root)),
-            ("Setores", self.icons.get("Setores"),
-             lambda: tela_supervisor(self.root)),
-             ("Produção", self.icons.get("Produção"), lambda: tela_producao(self.root)),
-            ("Ranking", self.icons.get("Ranking"), lambda: tela_ranking(self.root)),
-            ("Usuários", self.icons.get("Usuários"),
-             lambda: tela_supervisor(self.root)),
-            ("Sair", self.icons.get("Sair"), self.root.quit)
+            ("Contribuintes", "contribuintes.png", lambda: tela_contribuintes(self.root)),
+            ("Recibos", "recibos.png", lambda: tela_recibo(self.root)),
+            ("Boletos", "boletos.png", lambda: tela_boletos(self.root)),
+            ("Operadores", "operadores.png", lambda: tela_operadores(self.root)),
+            ("Mensageiros", "mensageiros.png", lambda: tela_mensageiros(self.root)),
+            ("Supervisores", "supervisor.png", lambda: tela_supervisor(self.root)),
+            ("Produção", "producao.png", lambda: tela_producao(self.root)),  # sem acento
+            ("Ranking", "ranking.png", lambda: tela_ranking(self.root)),
+            ("Sair", "sair.png", self.root.quit)
         ]
 
-        for txt, icon, cmd in botoes:
+        for txt, icon_name, cmd in botoes:
+            icon = self.icons.get(icon_name)
+
             btn = tk.Button(
                 toolbar,
                 text=txt,
                 image=icon,
                 compound="top",
                 command=cmd,
-                bg=BTN_NORMAL,
+                bg=TOOLBAR_BG,
                 fg="white",
-                activebackground=BTN_HOVER,
+                activebackground=TOOLBAR_HOVER,
                 activeforeground="white",
                 relief="flat",
                 bd=0,
                 font=("Segoe UI", 9, "bold"),
                 cursor="hand2"
             )
-            btn.pack(side=tk.LEFT, padx=6, pady=4)
+            btn.pack(side=tk.LEFT, padx=8, pady=6)
 
-            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=BTN_HOVER))
-            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=BTN_NORMAL))
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=TOOLBAR_HOVER))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=TOOLBAR_BG))
+
+    # ================= DASHBOARD =================
+    def create_dashboard(self):
+        container = tk.Frame(self.root, bg=BG_APP)
+        container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        for i in range(4):
+            container.columnconfigure(i, weight=1)
+
+        self.criar_card(container, "Service level", "71%", "< 80%", 0, 0, VERMELHO)
+        self.criar_card(container, "Longest wait time", "09:47", "< 08:00", 0, 1, TEXT)
+        self.criar_card(container, "Agent contacts", "375", "", 0, 2, AZUL)
+        self.criar_card(container, "Average wait", "02:51", "< 05:00", 0, 3, VERDE)
+
+    # ================= CARD =================
+    def criar_card(self, parent, titulo, valor, meta, row, col, cor):
+        card = tk.Frame(parent, bg=CARD_BG, bd=1, relief="solid")
+        card.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
+
+        tk.Label(card, text=titulo, bg=CARD_BG, fg="#666", font=("Segoe UI", 10)).pack(anchor="w", padx=15, pady=10)
+        tk.Label(card, text=valor, bg=CARD_BG, fg=cor, font=("Segoe UI", 28, "bold")).pack()
+
+        if meta:
+            tk.Label(card, text=meta, bg=CARD_BG, fg="#888", font=("Segoe UI", 9)).pack()
+
+    # ================= ÍCONES =================
+    def carregar_icones(self):
+        base = Path(__file__).parent / "icons"
+        tamanho = (32, 32)
+
+        def load(nome):
+            if Image is None:
+                return None
+            try:
+                caminho = base / nome
+                if caminho.exists():
+                    img = Image.open(caminho).resize(tamanho, Image.LANCZOS)
+                    return ImageTk.PhotoImage(img)
+            except:
+                pass
+            return None
+
+        nomes = [
+            "contribuintes.png",
+            "recibos.png",
+            "boletos.png",
+            "operadores.png",
+            "mensageiros.png",
+            "supervisor.png",
+            "producao.png",  # sem acento
+            "ranking.png",
+            "sair.png"
+        ]
+
+        for n in nomes:
+            self.icons[n] = load(n)
 
 
+# ================= EXECUÇÃO =================
 if __name__ == "__main__":
-    init_db()
     root = tk.Tk()
     app = CallCenterApp(root)
     root.mainloop()
